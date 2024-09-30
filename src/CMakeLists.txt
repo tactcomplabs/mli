@@ -14,9 +14,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-add_executable(MLI MLI.cpp)
+add_executable(mli MLI.cpp)
 
-target_include_directories(interpreter-driver PRIVATE
+target_include_directories(mli PRIVATE
   ${CMAKE_SOURCE_DIR}/include
   ${CMAKE_BINARY_DIR}/include
 )
@@ -39,7 +39,7 @@ set(LLVM_LINK_COMPONENTS
 llvm_map_components_to_libnames(LLVM_LIBS ${LLVM_LINK_COMPONENTS})
 
 # Link interpreter-driver against necessary libraries
-target_link_libraries(interpreter-driver
+target_link_libraries(mli
   PRIVATE
   MLIRInterpreterLib
   # MLIR libraries

@@ -16,7 +16,7 @@
 // limitations under the License.
 //===----------------------------------------------------------------------===//
 #include "mlir/Interpreter/Dialects/LLVMInterpreter.h"
-#include "mlir/Dialect/LLVM/LLVMDialect.h"
+#include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/Interpreter/Interpreter.h"
 #include "mlir/Interpreter/InterpreterOpInterface.h"
