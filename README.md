@@ -1,6 +1,6 @@
 # MLIR Interpreter (Multi-Level Interpreter)
 
-Out-of-Tree Interpreter for executing MLIR code.
+Out-of-Tree Interpreter for executing MLIR code. Based on [work](https://discourse.llvm.org/t/rfc-mlir-interpreter-framework/63567) originally published by @lchien
 
 # Building
 
