@@ -71,3 +71,4 @@ mlir_tablegen(InterpreterOpInterface.cpp.inc -gen-op-interface-defs)
 add_public_tablegen_target(MLIRInterpreterOpInterfaceIncGen)
 
 add_dependencies(MLIRInterpreterLib MLIRInterpreterOpInterfaceIncGen)
+
