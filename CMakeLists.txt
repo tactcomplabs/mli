@@ -78,5 +78,5 @@ install(FILES
 option(ENABLE_TESTING "Enable Testing" OFF)
 if(ENABLE_TESTING)
   enable_testing()
-  add_subdirectory(tests)
+  add_subdirectory(test)
 endif()
