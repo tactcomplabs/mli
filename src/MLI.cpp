@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
   // Register command-line options
   llvm::cl::opt<std::string> inputFilename(llvm::cl::Positional, llvm::cl::desc("<input mlir file>"), llvm::cl::Required);
   llvm::cl::opt<std::string> funcName("func", llvm::cl::desc("Specify function entry point"), llvm::cl::value_desc("function"), llvm::cl::init("main"));
-  llvm::cl::list<int32_t> args("args", llvm::cl::desc("List of integer arguments"), llvm::cl::CommaSeparated);
+  llvm::cl::list<std::string> args("args", llvm::cl::desc("List of integer arguments"), llvm::cl::CommaSeparated);
 
   llvm::cl::ParseCommandLineOptions(argc, argv, "MLIR Interpreter Driver\n");
 
@@ -103,8 +103,22 @@ int main(int argc, char **argv) {
 
   // Prepare arguments with correct size
   mlir::SmallVector<mlir::EvalValue, 4> arguments;
+  char* p;
   for (auto &arg : args) {
-    arguments.push_back(interpreter.createEvalValue(mlir::IntegerType::get(&context, 32), &arg, sizeof(arg)));
+    // Is the string an integer?
+    long int_val = std::strtol(arg.c_str(), &p, 10);
+    if (int_val != 0) {
+        arguments.push_back(interpreter.createEvalValue(mlir::IntegerType::get(&context, 32), &int_val, 32));
+        continue;
+    }
+    // Is the string a float/double?
+    double float_val = std::strtod(arg.c_str(), &p);
+    if (float_val != 0) {
+        arguments.push_back(interpreter.createEvalValue(mlir::Float64Type::get(&context), &float_val, 64));
+    }
+    else {
+        llvm::errs() << "Unable to parse argument " << arg << " as float or int\n";
+    }
   }
 
   // Get the function
