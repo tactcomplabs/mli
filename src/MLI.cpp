@@ -72,13 +72,27 @@ static mlir::OwningOpRef<mlir::ModuleOp> parseMLIRFile(llvm::StringRef filename,
   return nullptr;
 }
 
+// If given a decimal number, std::stoi will not fail, but return the integer part
+// Check that the given number is an integer, use std::stod if false
+bool isInteger(const std::string s) {
+    if (!std::isdigit(s[0]) && s[0] != '+' && s[0] != '-') {
+        return false;
+    }
+    for (char c: s) {
+        if (!std::isdigit(c)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 int main(int argc, char **argv) {
   mlir::MLIRContext context;
 
   // Register command-line options
   llvm::cl::opt<std::string> inputFilename(llvm::cl::Positional, llvm::cl::desc("<input mlir file>"), llvm::cl::Required);
   llvm::cl::opt<std::string> funcName("func", llvm::cl::desc("Specify function entry point"), llvm::cl::value_desc("function"), llvm::cl::init("main"));
-  llvm::cl::list<std::string> args("args", llvm::cl::desc("List of integer arguments"), llvm::cl::CommaSeparated);
+  llvm::cl::list<std::string> args("args", llvm::cl::desc("List of numeric arguments"), llvm::cl::CommaSeparated);
 
   llvm::cl::ParseCommandLineOptions(argc, argv, "MLIR Interpreter Driver\n");
 
@@ -105,10 +119,9 @@ int main(int argc, char **argv) {
   mlir::SmallVector<mlir::EvalValue, 4> arguments;
   char* p;
   for (auto &arg : args) {
-    // Is the string an integer?
-    long int_val = std::strtol(arg.c_str(), &p, 10);
-    if (int_val != 0) {
-        arguments.push_back(interpreter.createEvalValue(mlir::IntegerType::get(&context, 32), &int_val, 32));
+    if (isInteger(arg)) {
+        int64_t int_val = std::stoll(arg);
+        arguments.push_back(interpreter.createEvalValue(mlir::IntegerType::get(&context, 64), &int_val, 64));
         continue;
     }
     // Is the string a float/double?
