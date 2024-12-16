@@ -20,8 +20,29 @@
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/Interpreter/Interpreter.h"
 #include "mlir/Interpreter/InterpreterOpInterface.h"
+#include "llvm/ADT/APInt.h"
+#include "llvm/ADT/APSInt.h"
+#include "llvm/ADT/APFloat.h"
+#include <cmath>
 
 using namespace mlir;
+
+APInt getIntegerData(const EvalValue val, const bool isSigned = false) {
+    Type t = val.getType();
+    uint64_t num = val.getData<uint64_t>().front();
+    size_t width = val.getRawDataSizeInBytes();
+    return APInt(width, num, isSigned);
+}
+
+APFloat getFloatData(const EvalValue val) {
+    double num = val.getData<double>().front();
+    size_t width = val.getRawDataSizeInBytes();
+    printf("Received val %f with width %u\n", num, width);
+    if (width == sizeof(float)) {
+        return APFloat((float)num);
+    }
+    return APFloat(num);
+}
 
 namespace {
 
@@ -36,17 +57,37 @@ public:
   }
 };
 
+struct LLVMFNegOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMFNegOpInterpreter,
+                                                   LLVM::FNegOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    llvm::outs() << "Interpreting LLVM::FNeg\n";
+    APFloat lhs = getFloatData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ");
+    APFloat result = -lhs;
+    result.print(llvm::outs() << "\nresult: ");
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
 struct LLVMAddOpInterpreter
     : public InterpreterOpInterface::ExternalModel<LLVMAddOpInterpreter, LLVM::AddOp> {
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
+  bool isSigned = true;
   llvm::outs() << "Interpreting LLVM::AddOp\n";
-  int lhs = operands[0].getData<int>().front();
-  llvm::outs() << "lhs: " << lhs << "\n";
-  int rhs = operands[1].getData<int>().front();
-  llvm::outs() << "rhs: " << rhs << "\n";
-  int result = lhs + rhs;
-  llvm::outs() << "result: " << result << "\n";
+  APInt lhs = getIntegerData(operands[0]);  
+  lhs.print(llvm::outs() << "lhs: ", isSigned);
+  APInt rhs = getIntegerData(operands[1]);
+  rhs.print(llvm::outs() << "\nrhs: ", isSigned);
+  APInt result = lhs + rhs;
+  result.print(llvm::outs() << "\nresult: ", isSigned);
+  llvm::outs() << "\n";
 
   // Create an EvalValue from the result
   auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -57,40 +98,40 @@ struct LLVMAddOpInterpreter
   }
 };
 
+struct LLVMFAddOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMFAddOpInterpreter,
+                                                   LLVM::FAddOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    llvm::outs() << "Interpreting LLVM::FAdd\n";
+    APFloat lhs = getFloatData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ");
+    APFloat rhs = getFloatData(operands[1]);
+    rhs.print(llvm::outs() << "\nrhs: ");
+    APFloat result = lhs + rhs;
+    result.print(llvm::outs() << "\nresult: ");
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
 struct LLVMSubOpInterpreter
-    : public InterpreterOpInterface::ExternalModel<LLVMSubOpInterpreter, LLVM::SubOp> {
+    : public InterpreterOpInterface::ExternalModel<LLVMSubOpInterpreter,
+                                                   LLVM::SubOp> {
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
-  llvm::outs() << "Interpreting LLVM::SubOp\n";
-  int lhs = operands[0].getData<int>().front();
-  llvm::outs() << "lhs: " << lhs << "\n";
-  int rhs = operands[1].getData<int>().front();
-  llvm::outs() << "rhs: " << rhs << "\n";
-  int result = lhs - rhs;
-  llvm::outs() << "result: " << result << "\n";
-
-  // Create an EvalValue from the result
-  auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
-
-
-  // Wrap the EvalValue in an ArrayRef and return the EvalResult
-    return interpreter.createBindValueResult(evalResult);
-  }
-};
-
-
-struct LLVMAShrOpInterpreter
-    : public InterpreterOpInterface::ExternalModel<LLVMAShrOpInterpreter,
-                                                   LLVM::AShrOp> {
-  static EvalResult interpret(Operation *op, Interpreter &interpreter,
-                              ArrayRef<EvalValue> operands) {
-    llvm::outs() << "Interpreting LLVM::ASHROp\n";
-    int lhs = operands[0].getData<int>().front();
-    llvm::outs() << "lhs: " << lhs << "\n";
-    int rhs = operands[1].getData<int>().front();
-    llvm::outs() << "rhs: " << rhs << "\n";
-    int result = lhs >> rhs;
-    llvm::outs() << "result: " << result << "\n";
+    bool isSigned = true;
+    llvm::outs() << "Interpreting LLVM::Sub\n";
+    APInt lhs = getIntegerData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt rhs = getIntegerData(operands[1]);
+    rhs.print(llvm::outs() << "\nrhs: ", isSigned);
+    APInt result = lhs - rhs;
+    result.print(llvm::outs() << "\nresult: ", isSigned);
+    llvm::outs() << "\n";
     // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
     // Wrap the EvalValue in an ArrayRef and return the EvalResult
@@ -98,57 +139,19 @@ struct LLVMAShrOpInterpreter
   }
 };
 
-
-struct LLVMShlOpInterpreter
-    : public InterpreterOpInterface::ExternalModel<LLVMShlOpInterpreter,
-                                                   LLVM::ShlOp> {
+struct LLVMFSubOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMFSubOpInterpreter,
+                                                   LLVM::FSubOp> {
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
-    llvm::outs() << "Interpreting LLVM::SHLOp\n";
-    int lhs = operands[0].getData<int>().front();
-    llvm::outs() << "lhs: " << lhs << "\n";
-    int rhs = operands[1].getData<int>().front();
-    llvm::outs() << "rhs: " << rhs << "\n";
-    int result = lhs << rhs;
-    llvm::outs() << "result: " << result << "\n";
-    // Create an EvalValue from the result
-    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
-    // Wrap the EvalValue in an ArrayRef and return the EvalResult
-    return interpreter.createBindValueResult(evalResult);
-  }
-};
-
-struct LLVMAndOpInterpreter
-    : public InterpreterOpInterface::ExternalModel<LLVMAndOpInterpreter,
-                                                   LLVM::AndOp> {
-  static EvalResult interpret(Operation *op, Interpreter &interpreter,
-                              ArrayRef<EvalValue> operands) {
-    llvm::outs() << "Interpreting LLVM::ANDOp\n";
-    int lhs = operands[0].getData<int>().front();
-    llvm::outs() << "lhs: " << lhs << "\n";
-    int rhs = operands[1].getData<int>().front();
-    llvm::outs() << "rhs: " << rhs << "\n";
-    int result = lhs & rhs;
-    llvm::outs() << "result: " << result << "\n";
-    // Create an EvalValue from the result
-    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
-    // Wrap the EvalValue in an ArrayRef and return the EvalResult
-    return interpreter.createBindValueResult(evalResult);
-  }
-};
-
-struct LLVMOrOpInterpreter
-    : public InterpreterOpInterface::ExternalModel<LLVMOrOpInterpreter,
-                                                   LLVM::OrOp> {
-  static EvalResult interpret(Operation *op, Interpreter &interpreter,
-                              ArrayRef<EvalValue> operands) {
-    llvm::outs() << "Interpreting LLVM::OROp\n";
-    int lhs = operands[0].getData<int>().front();
-    llvm::outs() << "lhs: " << lhs << "\n";
-    int rhs = operands[1].getData<int>().front();
-    llvm::outs() << "rhs: " << rhs << "\n";
-    int result = lhs | rhs;
-    llvm::outs() << "result: " << result << "\n";
+    llvm::outs() << "Interpreting LLVM::FSub\n";
+    APFloat lhs = getFloatData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ");
+    APFloat rhs = getFloatData(operands[1]);
+    rhs.print(llvm::outs() << "\nrhs: ");
+    APFloat result = lhs - rhs;
+    result.print(llvm::outs() << "\nresult: ");
+    llvm::outs() << "\n";
     // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
     // Wrap the EvalValue in an ArrayRef and return the EvalResult
@@ -161,13 +164,267 @@ struct LLVMMulOpInterpreter
                                                    LLVM::MulOp> {
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
-    llvm::outs() << "Interpreting LLVM::MULOp\n";
-    int lhs = operands[0].getData<int>().front();
-    llvm::outs() << "lhs: " << lhs << "\n";
-    int rhs = operands[1].getData<int>().front();
-    llvm::outs() << "rhs: " << rhs << "\n";
-    int result = lhs * rhs;
-    llvm::outs() << "result: " << result << "\n";
+    bool isSigned = true;
+    llvm::outs() << "Interpreting LLVM::Mul\n";
+    APInt lhs = getIntegerData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt rhs = getIntegerData(operands[1]);
+    rhs.print(llvm::outs() << "\nrhs: ", isSigned);
+    APInt result = lhs * rhs;
+    result.print(llvm::outs() << "\nresult: ", isSigned);
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMFMulOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMFMulOpInterpreter,
+                                                   LLVM::FMulOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    llvm::outs() << "Interpreting LLVM::FMul\n";
+    APFloat lhs = getFloatData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ");
+    APFloat rhs = getFloatData(operands[1]);
+    rhs.print(llvm::outs() << "\nrhs: ");
+    APFloat result = lhs * rhs;
+    result.print(llvm::outs() << "\nresult: ");
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMUDivOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMUDivOpInterpreter,
+                                                   LLVM::UDivOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = false;
+    llvm::outs() << "Interpreting LLVM::UDiv\n";
+    APInt lhs = getIntegerData(operands[0], isSigned);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt rhs = getIntegerData(operands[1], isSigned);
+    rhs.print(llvm::outs() << "\nrhs: ", isSigned);
+    APInt result = lhs.udiv(rhs);
+    result.print(llvm::outs() << "\nresult: ", isSigned);
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMSDivOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMSDivOpInterpreter,
+                                                   LLVM::SDivOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = true;
+    llvm::outs() << "Interpreting LLVM::SDiv\n";
+    APInt lhs = getIntegerData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt rhs = getIntegerData(operands[1]);
+    rhs.print(llvm::outs() << "\nrhs: ", isSigned);
+    APInt result = lhs.sdiv(rhs);
+    result.print(llvm::outs() << "\nresult: ", isSigned);
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMFDivOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMFDivOpInterpreter,
+                                                   LLVM::FDivOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    llvm::outs() << "Interpreting LLVM::FDiv\n";
+    APFloat lhs = getFloatData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ");
+    APFloat rhs = getFloatData(operands[1]);
+    rhs.print(llvm::outs() << "\nrhs: ");
+    APFloat result = lhs / rhs;
+    result.print(llvm::outs() << "\nresult: ");
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMURemOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMURemOpInterpreter,
+                                                   LLVM::URemOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = false;
+    llvm::outs() << "Interpreting LLVM::URem\n";
+    APInt lhs = getIntegerData(operands[0], isSigned);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt rhs = getIntegerData(operands[1], isSigned);
+    rhs.print(llvm::outs() << "\nrhs: ", isSigned);
+    APInt result = lhs.urem(rhs);
+    result.print(llvm::outs() << "\nresult: ", isSigned);
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMSRemOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMSRemOpInterpreter,
+                                                   LLVM::SRemOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = true;
+    llvm::outs() << "Interpreting LLVM::SRem\n";
+    APInt lhs = getIntegerData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt rhs = getIntegerData(operands[1]);
+    rhs.print(llvm::outs() << "\nrhs: ", isSigned);
+    APInt result = lhs.srem(rhs);
+    result.print(llvm::outs() << "\nresult: ", isSigned);
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMFRemOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMFRemOpInterpreter,
+                                                   LLVM::FRemOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    llvm::outs() << "Interpreting LLVM::FRem\n";
+    APFloat lhs = getFloatData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ");
+    APFloat rhs = getFloatData(operands[1]);
+    rhs.print(llvm::outs() << "\nrhs: ");
+
+    lhs.mod(rhs);
+    APFloat result = lhs;
+
+    result.print(llvm::outs() << "\nresult: ");
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMShlOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMShlOpInterpreter,
+                                                   LLVM::ShlOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = true;
+    llvm::outs() << "Interpreting LLVM::Shl\n";
+    APInt lhs = getIntegerData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt rhs = getIntegerData(operands[1]);
+    rhs.print(llvm::outs() << "\nrhs: ", isSigned);
+    APInt result = lhs.shl(rhs);
+    result.print(llvm::outs() << "\nresult: ", isSigned);
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMLShrOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMLShrOpInterpreter,
+                                                   LLVM::LShrOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = true;
+    llvm::outs() << "Interpreting LLVM::LShr\n";
+    APInt lhs = getIntegerData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt rhs = getIntegerData(operands[1]);
+    rhs.print(llvm::outs() << "\nrhs: ", isSigned);
+    APInt result = lhs.lshr(rhs);
+    result.print(llvm::outs() << "\nresult: ", isSigned);
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMAShrOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMAShrOpInterpreter,
+                                                   LLVM::AShrOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = true;
+    llvm::outs() << "Interpreting LLVM::AShr\n";
+    APInt lhs = getIntegerData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt rhs = getIntegerData(operands[1]);
+    rhs.print(llvm::outs() << "\nrhs: ", isSigned);
+    APInt result = lhs.ashr(rhs);
+    result.print(llvm::outs() << "\nresult: ", isSigned);
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMAndOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMAndOpInterpreter,
+                                                   LLVM::AndOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = true;
+    llvm::outs() << "Interpreting LLVM::And\n";
+    APInt lhs = getIntegerData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt rhs = getIntegerData(operands[1]);
+    rhs.print(llvm::outs() << "\nrhs: ", isSigned);
+    APInt result = lhs & rhs;
+    result.print(llvm::outs() << "\nresult: ", isSigned);
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMOrOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMOrOpInterpreter,
+                                                   LLVM::OrOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = true;
+    llvm::outs() << "Interpreting LLVM::Or\n";
+    APInt lhs = getIntegerData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt rhs = getIntegerData(operands[1]);
+    rhs.print(llvm::outs() << "\nrhs: ", isSigned);
+    APInt result = lhs | rhs;
+    result.print(llvm::outs() << "\nresult: ", isSigned);
+    llvm::outs() << "\n";
     // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
     // Wrap the EvalValue in an ArrayRef and return the EvalResult
@@ -180,13 +437,15 @@ struct LLVMXOrOpInterpreter
                                                    LLVM::XOrOp> {
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
-    llvm::outs() << "Interpreting LLVM::XOROp\n";
-    int lhs = operands[0].getData<int>().front();
-    llvm::outs() << "lhs: " << lhs << "\n";
-    int rhs = operands[1].getData<int>().front();
-    llvm::outs() << "rhs: " << rhs << "\n";
-    int result = lhs ^ rhs;
-    llvm::outs() << "result: " << result << "\n";
+    bool isSigned = true;
+    llvm::outs() << "Interpreting LLVM::XOr\n";
+    APInt lhs = getIntegerData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt rhs = getIntegerData(operands[1]);
+    rhs.print(llvm::outs() << "\nrhs: ", isSigned);
+    APInt result = lhs ^ rhs;
+    result.print(llvm::outs() << "\nresult: ", isSigned);
+    llvm::outs() << "\n";
     // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
     // Wrap the EvalValue in an ArrayRef and return the EvalResult
@@ -194,6 +453,25 @@ struct LLVMXOrOpInterpreter
   }
 };
 
+struct LLVMTruncOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMTruncOpInterpreter,
+                                                   LLVM::TruncOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = true;
+    llvm::outs() << "Interpreting LLVM::Trunc\n";
+    llvm::errs() << "UNIMPLEMENTED\n";
+    APInt lhs = getIntegerData(operands[0]);
+    //lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt result = lhs;
+    // result.print(llvm::outs() << "\nresult: ", isSigned);
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
 // addressof
 //
 // Creates a pointer pointing to a global or a function
@@ -244,15 +522,26 @@ struct LLVMAllocaOpInterpreter
 } // namespace
 
 void LLVMInterpreter::attachInterface(MLIRContext &context) {
-  LLVM::SubOp::attachInterface<LLVMSubOpInterpreter>(context);
-  LLVM::AddOp::attachInterface<LLVMAddOpInterpreter>(context);
-  LLVM::ReturnOp::attachInterface<LLVMReturnOpInterpreter>(context);
-  LLVM::AShrOp::attachInterface<LLVMAShrOpInterpreter>(context);
-  LLVM::ShlOp::attachInterface<LLVMShlOpInterpreter>(context);
-  LLVM::AndOp::attachInterface<LLVMAndOpInterpreter>(context);
-  LLVM::OrOp::attachInterface<LLVMOrOpInterpreter>(context);
-  LLVM::MulOp::attachInterface<LLVMMulOpInterpreter>(context);
-  LLVM::XOrOp::attachInterface<LLVMXOrOpInterpreter>(context);
-  LLVM::AddressOfOp::attachInterface<LLVMAddressOfOpInterpreter>(context);
-
+    LLVM::ReturnOp::attachInterface<LLVMReturnOpInterpreter>(context);
+    LLVM::FNegOp::attachInterface<LLVMFNegOpInterpreter>(context);
+    LLVM::AddOp::attachInterface<LLVMAddOpInterpreter>(context);
+    LLVM::FAddOp::attachInterface<LLVMFAddOpInterpreter>(context);
+    LLVM::SubOp::attachInterface<LLVMSubOpInterpreter>(context);
+    LLVM::FSubOp::attachInterface<LLVMFSubOpInterpreter>(context);
+    LLVM::MulOp::attachInterface<LLVMMulOpInterpreter>(context);
+    LLVM::FMulOp::attachInterface<LLVMFMulOpInterpreter>(context);
+    LLVM::SDivOp::attachInterface<LLVMSDivOpInterpreter>(context);
+    LLVM::UDivOp::attachInterface<LLVMUDivOpInterpreter>(context);
+    LLVM::FDivOp::attachInterface<LLVMFDivOpInterpreter>(context);
+    LLVM::SRemOp::attachInterface<LLVMSRemOpInterpreter>(context);
+    LLVM::URemOp::attachInterface<LLVMURemOpInterpreter>(context);
+    LLVM::FRemOp::attachInterface<LLVMFRemOpInterpreter>(context);
+    LLVM::ShlOp::attachInterface<LLVMShlOpInterpreter>(context);
+    LLVM::LShrOp::attachInterface<LLVMLShrOpInterpreter>(context);
+    LLVM::AShrOp::attachInterface<LLVMAShrOpInterpreter>(context);
+    LLVM::AndOp::attachInterface<LLVMAndOpInterpreter>(context);
+    LLVM::OrOp::attachInterface<LLVMOrOpInterpreter>(context);
+    LLVM::XOrOp::attachInterface<LLVMXOrOpInterpreter>(context);
+    LLVM::AddressOfOp::attachInterface<LLVMAddressOfOpInterpreter>(context);
+    LLVM::TruncOp::attachInterface<LLVMTruncOpInterpreter>(context);
 }
