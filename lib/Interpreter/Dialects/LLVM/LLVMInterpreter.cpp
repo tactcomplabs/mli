@@ -21,14 +21,12 @@
 #include "mlir/Interpreter/Interpreter.h"
 #include "mlir/Interpreter/InterpreterOpInterface.h"
 #include "llvm/ADT/APInt.h"
-#include "llvm/ADT/APSInt.h"
 #include "llvm/ADT/APFloat.h"
 #include <cmath>
 
 using namespace mlir;
 
 APInt getIntegerData(const EvalValue val, const bool isSigned = false) {
-    Type t = val.getType();
     uint64_t num = val.getData<uint64_t>().front();
     size_t width = val.getRawDataSizeInBytes();
     return APInt(width, num, isSigned);
@@ -37,8 +35,7 @@ APInt getIntegerData(const EvalValue val, const bool isSigned = false) {
 APFloat getFloatData(const EvalValue val) {
     double num = val.getData<double>().front();
     size_t width = val.getRawDataSizeInBytes();
-    printf("Received val %f with width %u\n", num, width);
-    if (width == sizeof(float)) {
+    if (width == 8 * sizeof(float)) {
         return APFloat((float)num);
     }
     return APFloat(num);
@@ -458,7 +455,7 @@ struct LLVMTruncOpInterpreter
                                                    LLVM::TruncOp> {
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
-    bool isSigned = true;
+    // bool isSigned = true;
     llvm::outs() << "Interpreting LLVM::Trunc\n";
     llvm::errs() << "UNIMPLEMENTED\n";
     APInt lhs = getIntegerData(operands[0]);
