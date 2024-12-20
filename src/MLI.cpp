@@ -72,20 +72,6 @@ static mlir::OwningOpRef<mlir::ModuleOp> parseMLIRFile(llvm::StringRef filename,
   return nullptr;
 }
 
-// If given a decimal number, std::stoi will not fail, but return the integer part
-// Check that the given number is an integer, use std::stod if false
-bool isInteger(const std::string s) {
-    if (!std::isdigit(s[0]) && s[0] != '+' && s[0] != '-') {
-        return false;
-    }
-    for (char c: s) {
-        if (!std::isdigit(c)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 int main(int argc, char **argv) {
   mlir::MLIRContext context;
 
@@ -115,25 +101,6 @@ int main(int argc, char **argv) {
   // Set the module in the interpreter
   interpreter.setModule(*module);
 
-  // Prepare arguments with correct size
-  mlir::SmallVector<mlir::EvalValue, 4> arguments;
-  char* p;
-  for (auto &arg : args) {
-    if (isInteger(arg)) {
-        int64_t int_val = std::stoll(arg);
-        arguments.push_back(interpreter.createEvalValue(mlir::IntegerType::get(&context, 64), &int_val, 64));
-        continue;
-    }
-    // Is the string a float/double?
-    double float_val = std::strtod(arg.c_str(), &p);
-    if (float_val != 0) {
-        arguments.push_back(interpreter.createEvalValue(mlir::Float64Type::get(&context), &float_val, 64));
-    }
-    else {
-        llvm::errs() << "Unable to parse argument " << arg << " as float or int\n";
-    }
-  }
-
   // Get the function
   auto func = module->lookupSymbol<mlir::func::FuncOp>(funcName);
   if (!func) {
@@ -157,9 +124,37 @@ int main(int argc, char **argv) {
   mlir::ScopedRegionFrame regionFrameGuard(interpreter);
 
   // Ensure the number of arguments matches the function signature
-  if (entryBlock.getNumArguments() != arguments.size()) {
+  if (entryBlock.getNumArguments() != args.size()) {
     llvm::errs() << "Mismatch between number of provided arguments and function signature.\n";
     return 1;
+  }
+
+  // Prepare arguments with correct sizes and types
+  mlir::SmallVector<mlir::EvalValue, 4> arguments;
+  int i = 0;
+  for (auto &arg : args) {
+    // Use type from function argument in constructing data
+    auto arg_type = entryBlock.getArgument(i).getType();
+    unsigned width = arg_type.getIntOrFloatBitWidth();
+    if (arg_type.isInteger()) {
+        int64_t int_val = std::stoll(arg);
+        printf("Parsing %s into int with width %u\n", arg.c_str(), width);
+        arguments.push_back(interpreter.createEvalValue(mlir::IntegerType::get(&context, width), &int_val, width));
+    }
+    else if (arg_type.isF32()) {
+        float float_val = std::stof(arg);
+        printf("Parsing %s into float %f with width %u\n", arg.c_str(), float_val, width);
+        arguments.push_back(interpreter.createEvalValue(mlir::Float32Type::get(&context), &float_val, width));
+    }
+    else if (arg_type.isF64()) {
+        double float_val = std::stod(arg);
+        printf("Parsing %s into float %f with width %u\n", arg.c_str(), float_val, width);
+        arguments.push_back(interpreter.createEvalValue(mlir::Float64Type::get(&context), &float_val, width));
+    }
+    else {
+        llvm::errs() << "Unrecognized type, not int or floating point" << "\n";
+    }
+    i++;
   }
 
   // Initialize and map block arguments to EvalValues
