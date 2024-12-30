@@ -11,6 +11,13 @@ mkdir build && cd build
 cmake -G Ninja -DLLVM_DIR=/opt/homebrew/opt/llvm@19/lib/cmake/llvm -DMLIR_DIR=/opt/homebrew/opt/llvm@19/lib/cmake/mlir -DCMAKE_EXPORT_COMPILE_COMMANDS=On -DCMAKE_BUILD_TYPE=RelWDebInfo ../ -DCMAKE_INSTALL_PREFIX=/opt/homebrew/opt/llvm@19
 ```
 
+### MacOS Build Example
+
+```bash
+brew install cmake ninja llvm@19
+cmake -G Ninja -DLLVM_DIR=/opt/homebrew/opt/llvm@19/lib/cmake/llvm -DMLIR_DIR=/opt/homebrew/opt/llvm@19/lib/cmake/mlir -DCMAKE_EXPORT_COMPILE_COMMANDS=On ../
+```
+
 # Testing
 
 - `mli` executable takes in a `.mlir` file and runs the interpreter on it.
