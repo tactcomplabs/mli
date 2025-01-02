@@ -61,8 +61,9 @@ APFloat getFloatData(const EvalValue val) {
     return APFloat(num);
 }
 
-// The APFloat library doesn't support standard math functions (sqrt, exp, etc)
+// The APFloat library doesn't support standard math functions
 // Convert num to double, compute function, and store result back into APFloat
+// For unary operations (std::sqrt, std::cos, etc.)
 APFloat compute(const APFloat& num, double (*func)(double)) {
     double tmp = num.convertToDouble();
     tmp = func(tmp);
@@ -70,6 +71,30 @@ APFloat compute(const APFloat& num, double (*func)(double)) {
     bool losesInfo;
     // Copy semantics from original num to ensure that dtype is the same
     result.convert(num.getSemantics(), llvm::RoundingMode::TowardZero, &losesInfo);
+    return result;
+}
+
+// For binary operations on two floats (std::pow, std::fmax)
+APFloat compute(const APFloat& lhs, const APFloat& rhs, double (*func)(double, double)) {
+    double tmp1 = lhs.convertToDouble();
+    double tmp2 = rhs.convertToDouble();
+    tmp1 = func(tmp1, tmp2);
+    APFloat result = APFloat(tmp1);
+    bool losesInfo;
+    // NOTE: Is this a good idea? What if signature is (f32, f32) -> f64?
+    result.convert(lhs.getSemantics(), llvm::RoundingMode::TowardZero, &losesInfo);
+    return result;
+}
+
+// For binary operations on float and int (std::powi)
+APFloat compute(const APFloat& lhs, const APInt& rhs, double (*func)(double, int64_t)) {
+    double tmp1 = lhs.convertToDouble();
+    int64_t tmp2 = rhs.getSExtValue();
+    tmp1 = func(tmp1, tmp2);
+    APFloat result = APFloat(tmp1);
+    bool losesInfo;
+    // NOTE: Is this a good idea? What if signature is (f32, f32) -> f64?
+    result.convert(lhs.getSemantics(), llvm::RoundingMode::TowardZero, &losesInfo);
     return result;
 }
 
@@ -356,6 +381,138 @@ struct LLVMFRemOpInterpreter
   }
 };
 
+struct LLVMICmpOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMICmpOpInterpreter,
+                                                   LLVM::ICmpOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    // icmp has various attributes specifying the type of comparison to make
+    LLVM::ICmpPredicate att = op->getAttrOfType<LLVM::ICmpPredicateAttr>("predicate").getValue();
+    bool isSigned = att == LLVM::ICmpPredicate::slt || att == LLVM::ICmpPredicate::sle
+                 || att == LLVM::ICmpPredicate::sgt || att == LLVM::ICmpPredicate::sge;
+
+    llvm::outs() << "Interpreting LLVM::ICmp\n";
+    APInt lhs = getIntegerData(operands[0], isSigned);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt rhs = getIntegerData(operands[1], isSigned);
+    rhs.print(llvm::outs() << "\nrhs: ", isSigned);
+
+    bool result;
+    llvm::outs() << "attribute: " << att << '\n';
+    switch (att) {
+        case LLVM::ICmpPredicate::ne:
+            result = lhs.ne(rhs);
+            break;
+        case LLVM::ICmpPredicate::slt:
+            result = lhs.slt(rhs);
+            break;
+        case LLVM::ICmpPredicate::sle:
+            result = lhs.sle(rhs);
+            break;
+        case LLVM::ICmpPredicate::sgt:
+            result = lhs.sgt(rhs);
+            break;
+        case LLVM::ICmpPredicate::sge:
+            result = lhs.sge(rhs);
+            break;
+        case LLVM::ICmpPredicate::ult:
+            result = lhs.ult(rhs);
+            break;
+        case LLVM::ICmpPredicate::ule:
+            result = lhs.ule(rhs);
+            break;
+        case LLVM::ICmpPredicate::ugt:
+            result = lhs.ugt(rhs);
+            break;
+        case LLVM::ICmpPredicate::uge:
+            result = lhs.uge(rhs);
+            break;
+        default:
+            result = lhs.eq(rhs);
+    }
+
+    llvm::outs() << "result: " << result << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMFCmpOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMFCmpOpInterpreter,
+                                                   LLVM::FCmpOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    // FCmp has various attributes specifying the type of comparison to make
+    LLVM::FCmpPredicate att = op->getAttrOfType<LLVM::FCmpPredicateAttr>("predicate").getValue();
+    llvm::outs() << "Interpreting LLVM::FCmp\n";
+    APFloat lhs = getFloatData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ");
+    APFloat rhs = getFloatData(operands[1]);
+    rhs.print(llvm::outs() << "\nrhs: ");
+
+    bool lhs_NaN = lhs.isNaN();
+    bool rhs_NaN = rhs.isNaN();
+    bool result;
+    // FCmp supports both ordered and unordered comparisons
+    // Any ordered comparison returns false if at least one argument is NaN
+    // Any unordered comparison returns true if at least one argument is NaN
+    switch (att) {
+        case LLVM::FCmpPredicate::_false:
+            result = false;
+            break;
+        case LLVM::FCmpPredicate::oeq:
+            result = !(lhs_NaN || rhs_NaN) && lhs == rhs;
+            break;
+        case LLVM::FCmpPredicate::ogt:
+            result = !(lhs_NaN || rhs_NaN) && lhs > rhs;
+            break;
+        case LLVM::FCmpPredicate::oge:
+            result = !(lhs_NaN || rhs_NaN) && lhs >= rhs;
+            break;
+        case LLVM::FCmpPredicate::olt:
+            result = !(lhs_NaN || rhs_NaN) && lhs < rhs;
+            break;
+        case LLVM::FCmpPredicate::one:
+            result = !(lhs_NaN || rhs_NaN) && lhs != rhs;
+            break;
+        case LLVM::FCmpPredicate::ord:
+            result = !(lhs_NaN || rhs_NaN);
+            break;
+        case LLVM::FCmpPredicate::ueq:
+            result = lhs_NaN || rhs_NaN || lhs == rhs;
+            break;
+        case LLVM::FCmpPredicate::ugt:
+            result = lhs_NaN || rhs_NaN || lhs > rhs;
+            break;
+        case LLVM::FCmpPredicate::uge:
+            result = lhs_NaN || rhs_NaN || lhs >= rhs;
+            break;
+        case LLVM::FCmpPredicate::ult:
+            result = lhs_NaN || rhs_NaN || lhs < rhs;
+            break;
+        case LLVM::FCmpPredicate::ule:
+            result = lhs_NaN || rhs_NaN || lhs <= rhs;
+            break;
+        case LLVM::FCmpPredicate::une:
+            result = lhs_NaN || rhs_NaN || lhs != rhs;
+            break;
+        case LLVM::FCmpPredicate::uno:
+            result = lhs_NaN || rhs_NaN;
+            break;
+        default:
+            result = true;
+    }
+
+    llvm::outs() << "result: " << result << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
 struct LLVMShlOpInterpreter
     : public InterpreterOpInterface::ExternalModel<LLVMShlOpInterpreter,
                                                    LLVM::ShlOp> {
@@ -583,13 +740,14 @@ struct LLVMBitcastOpInterpreter
     }
     else if (!src_type.isInteger() && src_type.isIntOrFloat()) { // src float, ret int
         APFloat lhs = getFloatData(operands[0]);
-        // FIXME: This bitcast always gives zero
+        lhs.print(llvm::outs() << "lhs: ");
         APInt result = lhs.bitcastToAPInt();
         result.print(llvm::outs() << "\nresult: ", true);
         evalResult = interpreter.createEvalValue(result_type, &result, sizeof(result));
     }
     else { // src int, ret float
         APInt lhs = getIntegerData(operands[0]);
+        lhs.print(llvm::outs() << "lhs: ", true);
         Semantics s = getFloatSemantics(result_type);
         APFloat result = APFloat(llvm::APFloat::EnumToSemantics(s), lhs);
         result.print(llvm::outs() << "\nresult: ");
@@ -795,7 +953,7 @@ struct LLVMFAbsOpInterpreter
     llvm::outs() << "Interpreting " << op->getName() << "\n";
     APFloat lhs = getFloatData(operands[0]);
     lhs.print(llvm::outs() << "lhs: ");
-    APFloat result = compute(lhs, std::fabs);
+    APFloat result = llvm::abs(lhs);
     result.print(llvm::outs() << "\nresult: ");
     llvm::outs() << "\n";
     // Create an EvalValue from the result
@@ -853,7 +1011,12 @@ struct LLVMFMAOpInterpreter
     llvm::outs() << "Interpreting " << op->getName() << "\n";
     APFloat lhs = getFloatData(operands[0]);
     lhs.print(llvm::outs() << "lhs: ");
-    APFloat result = lhs; // TODO:
+    APFloat rhs = getFloatData(operands[1]);
+    rhs.print(llvm::outs() << "rhs: ");
+    APFloat result = getFloatData(operands[2]);
+    result.print(llvm::outs() << "result (before FMA): ");
+
+    result = lhs * rhs + result;
     result.print(llvm::outs() << "\nresult: ");
     llvm::outs() << "\n";
     // Create an EvalValue from the result
@@ -917,6 +1080,86 @@ struct LLVMLogOpInterpreter
   }
 };
 
+struct LLVMMinNumOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMMinNumOpInterpreter,
+                                                   LLVM::MinNumOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    llvm::outs() << "Interpreting LLVM::MinNum\n";
+    APFloat lhs = getFloatData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ");
+    APFloat rhs = getFloatData(operands[1]);
+    rhs.print(llvm::outs() << "rhs: ");
+    APFloat result = llvm::minnum(lhs, rhs);
+    result.print(llvm::outs() << "\nresult: ");
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMMinimumOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMMinimumOpInterpreter,
+                                                   LLVM::MinimumOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    llvm::outs() << "Interpreting LLVM::Minimum\n";
+    APFloat lhs = getFloatData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ");
+    APFloat rhs = getFloatData(operands[1]);
+    rhs.print(llvm::outs() << "rhs: ");
+    APFloat result = llvm::minimum(lhs, rhs);
+    result.print(llvm::outs() << "\nresult: ");
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMMaximumOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMMaximumOpInterpreter,
+                                                   LLVM::MaximumOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    llvm::outs() << "Interpreting LLVM::Maximum\n";
+    APFloat lhs = getFloatData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ");
+    APFloat rhs = getFloatData(operands[1]);
+    rhs.print(llvm::outs() << "rhs: ");
+    APFloat result = llvm::maximum(lhs, rhs);
+    result.print(llvm::outs() << "\nresult: ");
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMMaxNumOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMMaxNumOpInterpreter,
+                                                   LLVM::MaxNumOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    llvm::outs() << "Interpreting LLVM::MaxNum\n";
+    APFloat lhs = getFloatData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ");
+    APFloat rhs = getFloatData(operands[1]);
+    rhs.print(llvm::outs() << "rhs: ");
+    APFloat result = llvm::maxnum(lhs, rhs);
+    result.print(llvm::outs() << "\nresult: ");
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
 struct LLVMSinOpInterpreter
     : public InterpreterOpInterface::ExternalModel<LLVMSinOpInterpreter,
                                                    LLVM::SinOp> {
@@ -926,6 +1169,169 @@ struct LLVMSinOpInterpreter
     APFloat lhs = getFloatData(operands[0]);
     lhs.print(llvm::outs() << "lhs: ");
     APFloat result = compute(lhs, std::sin);
+    result.print(llvm::outs() << "\nresult: ");
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMSqrtOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMSqrtOpInterpreter,
+                                                   LLVM::SqrtOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    llvm::outs() << "Interpreting LLVM::Sqrt\n";
+    APFloat lhs = getFloatData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ");
+    APFloat result = compute(lhs, std::sqrt);
+    result.print(llvm::outs() << "\nresult: ");
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMPowOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMPowOpInterpreter,
+                                                   LLVM::PowOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    llvm::outs() << "Interpreting LLVM::Pow\n";
+    APFloat lhs = getFloatData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ");
+    APFloat rhs = getFloatData(operands[1]);
+    rhs.print(llvm::outs() << "rhs: ");
+    APFloat result = compute(lhs, rhs, std::pow);
+    result.print(llvm::outs() << "\nresult: ");
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMPowIOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMPowIOpInterpreter,
+                                                   LLVM::PowIOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    llvm::outs() << "Interpreting LLVM::PowI\n";
+    APFloat lhs = getFloatData(operands[0]);
+    lhs.print(llvm::outs() << "lhs: ");
+    APInt rhs = getIntegerData(operands[1]);
+    lhs.print(llvm::outs() << "rhs: ");
+    APFloat result = compute(lhs, rhs, std::pow);
+    result.print(llvm::outs() << "\nresult: ");
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMSMaxOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMSMaxOpInterpreter,
+                                                   LLVM::SMaxOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = true;
+    llvm::outs() << "Interpreting LLVM::SMax\n";
+    APInt lhs = getIntegerData(operands[0], isSigned);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt rhs = getIntegerData(operands[1], isSigned);
+    rhs.print(llvm::outs() << "\nrhs: ", isSigned);
+    APInt result = lhs.sgt(rhs) ? lhs : rhs;
+    result.print(llvm::outs() << "\nresult: ", isSigned);
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMSMinOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMSMinOpInterpreter,
+                                                   LLVM::SMinOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = true;
+    llvm::outs() << "Interpreting LLVM::SMin\n";
+    APInt lhs = getIntegerData(operands[0], isSigned);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt rhs = getIntegerData(operands[1], isSigned);
+    rhs.print(llvm::outs() << "\nrhs: ", isSigned);
+    APInt result = lhs.slt(rhs) ? lhs : rhs;
+    result.print(llvm::outs() << "\nresult: ", isSigned);
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMUMaxOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMUMaxOpInterpreter,
+                                                   LLVM::UMaxOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = false;
+    llvm::outs() << "Interpreting LLVM::UMax\n";
+    APInt lhs = getIntegerData(operands[0], isSigned);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt rhs = getIntegerData(operands[1], isSigned);
+    rhs.print(llvm::outs() << "\nrhs: ", isSigned);
+    APInt result = lhs.ugt(rhs) ? lhs:rhs;
+    result.print(llvm::outs() << "\nresult: ", isSigned);
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMUMinOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMUMinOpInterpreter,
+                                                   LLVM::UMinOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = false;
+    llvm::outs() << "Interpreting LLVM::UMin\n";
+    APInt lhs = getIntegerData(operands[0], isSigned);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt rhs = getIntegerData(operands[1], isSigned);
+    rhs.print(llvm::outs() << "\nrhs: ", isSigned);
+    APInt result = lhs.ult(rhs) ? lhs : rhs;
+    result.print(llvm::outs() << "\nresult: ", isSigned);
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMCopySignOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMCopySignOpInterpreter,
+                                                   LLVM::CopySignOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    llvm::outs() << "Interpreting LLVM::CopySign\n";
+    APFloat result = getFloatData(operands[0]);
+    result.print(llvm::outs() << "lhs: ");
+    APFloat rhs = getFloatData(operands[1]);
+    rhs.print(llvm::outs() << "\nrhs: ");
+
+    result.copySign(rhs);
     result.print(llvm::outs() << "\nresult: ");
     llvm::outs() << "\n";
     // Create an EvalValue from the result
@@ -999,6 +1405,8 @@ void LLVMInterpreter::attachInterface(MLIRContext &context) {
     LLVM::SRemOp::attachInterface<LLVMSRemOpInterpreter>(context);
     LLVM::URemOp::attachInterface<LLVMURemOpInterpreter>(context);
     LLVM::FRemOp::attachInterface<LLVMFRemOpInterpreter>(context);
+    LLVM::ICmpOp::attachInterface<LLVMICmpOpInterpreter>(context);
+    LLVM::FCmpOp::attachInterface<LLVMFCmpOpInterpreter>(context);
 
     // Bitwise
     LLVM::ShlOp::attachInterface<LLVMShlOpInterpreter>(context);
@@ -1027,7 +1435,6 @@ void LLVMInterpreter::attachInterface(MLIRContext &context) {
     // Math Intrinsics
     LLVM::AbsOp::attachInterface<LLVMAbsOpInterpreter>(context);
     LLVM::CosOp::attachInterface<LLVMCosOpInterpreter>(context);
-    // ::math::CoshOp::attachInterface<LLVMCoshOpInterpreter>(context);
     LLVM::Exp2Op::attachInterface<LLVMExp2OpInterpreter>(context);
     LLVM::ExpOp::attachInterface<LLVMExpOpInterpreter>(context);
     LLVM::FAbsOp::attachInterface<LLVMFAbsOpInterpreter>(context);
@@ -1037,18 +1444,22 @@ void LLVMInterpreter::attachInterface(MLIRContext &context) {
     LLVM::Log10Op::attachInterface<LLVMLog10OpInterpreter>(context);
     LLVM::Log2Op::attachInterface<LLVMLog2OpInterpreter>(context);
     LLVM::LogOp::attachInterface<LLVMLogOpInterpreter>(context);
+    LLVM::MaximumOp::attachInterface<LLVMMaximumOpInterpreter>(context);
+    LLVM::MinimumOp::attachInterface<LLVMMinimumOpInterpreter>(context);
+    LLVM::MaxNumOp::attachInterface<LLVMMaxNumOpInterpreter>(context);
+    LLVM::MinNumOp::attachInterface<LLVMMinNumOpInterpreter>(context);
+    LLVM::PowOp::attachInterface<LLVMPowOpInterpreter>(context);
+    LLVM::PowIOp::attachInterface<LLVMPowIOpInterpreter>(context);
     LLVM::SinOp::attachInterface<LLVMSinOpInterpreter>(context);
-    /*
-    // ::math::SinhOp::attachInterface<LLVMSinhOpInterpreter>(context);
     LLVM::SMaxOp::attachInterface<LLVMSMaxOpInterpreter>(context);
     LLVM::SMinOp::attachInterface<LLVMSMinOpInterpreter>(context);
     LLVM::SqrtOp::attachInterface<LLVMSqrtOpInterpreter>(context);
-    // LLVM::TanOp::attachInterface<LLVMTanOpInterpreter>(context);
-    // LLVM::TanhOp::attachInterface<LLVMTanhOpInterpreter>(context);
     LLVM::UMaxOp::attachInterface<LLVMUMaxOpInterpreter>(context);
     LLVM::UMinOp::attachInterface<LLVMUMinOpInterpreter>(context);
 
     // Bit Manipulation Intrinsics
+    LLVM::CopySignOp::attachInterface<LLVMCopySignOpInterpreter>(context);
+    /*
     LLVM::BitReverseOp::attachInterface<LLVMBitReverseOpInterpreter>(context);
     LLVM::ByteSwapOp::attachInterface<LLVMByteSwapOpInterpreter>(context);
     LLVM::CountLeadingZerosOp::attachInterface<LLVMCountLeadingZerosOpInterpreter>(context);
