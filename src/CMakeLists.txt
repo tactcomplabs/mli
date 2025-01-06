@@ -18,7 +18,7 @@ add_executable(mli MLI.cpp)
 
 target_include_directories(mli PRIVATE
   ${CMAKE_SOURCE_DIR}/include
-  ${CMAKE_BINARY_DIR}/include
+  ${CMAKE_BINARY_DIR}/include  # Include generated headers
 )
 
 # List of required LLVM components
@@ -38,11 +38,10 @@ set(LLVM_LINK_COMPONENTS
 # Map LLVM components to library names
 llvm_map_components_to_libnames(LLVM_LIBS ${LLVM_LINK_COMPONENTS})
 
-# Link interpreter-driver against necessary libraries
+# Link mli executable against necessary libraries
 target_link_libraries(mli
   PRIVATE
   MLIRInterpreterLib
-  # MLIR libraries
   MLIRIR
   MLIRFuncDialect
   MLIRLLVMDialect
@@ -50,7 +49,13 @@ target_link_libraries(mli
   MLIRParser
   MLIRTransforms
   LLVMSupport
-
-  # LLVM libraries
   ${LLVM_LIBS}
+)
+
+# Ensure mli depends on the generated headers
+add_dependencies(mli MLIRInterpreterOpInterfaceIncGen)
+
+# Install the executable
+install(TARGETS mli
+  RUNTIME DESTINATION bin
 )

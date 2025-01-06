@@ -25,6 +25,7 @@
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/IR/RegionKindInterface.h"
 #include "mlir/Interpreter/InterpreterOpInterface.h"
+#include "mlir/Interpreter/MemoryManager.h"
 #include "mlir/Support/DebugStringHelper.h"
 #include "llvm/ADT/SmallVector.h"
 
@@ -48,8 +49,17 @@ char *EvalValue::getRawData() { return impl->getRawData(); }
 
 const char *EvalValue::getRawData() const { return impl->getRawData(); }
 
-Interpreter::Interpreter(MLIRContext &context, bool enableStackTraceOnError)
-    : context(&context), enableStackTraceOnError(enableStackTraceOnError) {}
+Interpreter::Interpreter(MLIRContext &context,
+                         bool enableStackTraceOnError,
+                         std::unique_ptr<MemoryManager> memMgr)
+    : context(&context),
+      enableStackTraceOnError(enableStackTraceOnError),
+      MemManager(std::move(memMgr)) {
+  // If the user didn't supply a MemoryManager, use a simple default.
+  if (!MemManager) {
+    MemManager = std::make_unique<SimpleMemoryManager>(1024 * 1024 * 1024 - 1);
+  }
+}
 
 EvalResult Interpreter::execute(StringRef entryFuncName,
                                 ArrayRef<EvalValue> arguments) {

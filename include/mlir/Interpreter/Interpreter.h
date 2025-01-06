@@ -17,6 +17,7 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/Interpreter/InterpreterOpInterface.h"
+#include "mlir/Interpreter/MemoryManager.h"
 #include "mlir/Support/LogicalResult.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallVector.h"
@@ -72,10 +73,12 @@ private:
 
 } // namespace detail
 
+
 class Interpreter {
 public:
   explicit Interpreter(MLIRContext &context,
-                       bool enableStackTraceOnError = false);
+                       bool enableStackTraceOnError = false,
+                       std::unique_ptr<MemoryManager> MemManager = nullptr);
 
   //===--------------------------------------------------------------------===//
   // Dialect interpreter registration
@@ -296,6 +299,8 @@ public:
                            sizeof(T) * data.size());
   }
 
+  // TODO: Change to smart pointer
+  MemoryManager &getMemManager() { return *MemManager; }
 private:
   /// Mapping from SSA names to evaluated value. This represents a value lookup
   /// scope within a region.
@@ -324,6 +329,7 @@ private:
 private:
   Interpreter(const Interpreter &) = delete;
   Interpreter &operator=(const Interpreter &) = delete;
+  std::unique_ptr<MemoryManager> MemManager;
 };
 
 /// Helper class to push and pop a function frame in a C++ scope.

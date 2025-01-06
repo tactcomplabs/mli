@@ -15,10 +15,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# CMake minimum version and project name
-
-cmake_minimum_required(VERSION 3.13)
-project(MLI LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.26)
+project(MLI VERSION 1.0.0 LANGUAGES C CXX)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -47,3 +45,31 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frtti")
 # Add subdirectories
 add_subdirectory(lib)
 add_subdirectory(src)
+
+# Install include files
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/
+        DESTINATION include
+        FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN "*.td" PATTERN "*.inc")
+
+# Install and export the targets
+install(EXPORT MLITargets
+        FILE MLITargets.cmake
+        NAMESPACE MLI::
+        DESTINATION lib/cmake/MLI)
+
+# Generate and install package config files
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/MLIConfigVersion.cmake"
+    VERSION "${PROJECT_VERSION}"
+    COMPATIBILITY AnyNewerVersion
+)
+
+configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/MLIConfig.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/MLIConfig.cmake"
+    INSTALL_DESTINATION lib/cmake/MLI)
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/MLIConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/MLIConfigVersion.cmake"
+    DESTINATION lib/cmake/MLI)
