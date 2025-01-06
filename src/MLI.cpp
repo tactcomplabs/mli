@@ -195,8 +195,15 @@ int main(int argc, char **argv) {
 
     if (llvm::isa<mlir::LLVM::ReturnOp>(op)) {
       llvm::outs() << "Returning from function.\n";
-      retval = result.getValues().back().getRawData();
-      break;
+      // save the last result
+      // the interpreter will return the last result
+      auto vals = result.getValues();
+      if (vals.empty()) {
+        retval = "!llvm.void";
+      }
+      else {
+        retval = vals.back().getRawData();
+      }
     }
   }
 
