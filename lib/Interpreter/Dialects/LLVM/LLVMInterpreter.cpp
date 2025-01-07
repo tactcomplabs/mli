@@ -1320,6 +1320,44 @@ struct LLVMUMinOpInterpreter
   }
 };
 
+struct LLVMBitReverseOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMBitReverseOpInterpreter,
+                                                   LLVM::BitReverseOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = false;
+    llvm::outs() << "Interpreting LLVM::BitReverse\n";
+    APInt lhs = getIntegerData(operands[0], isSigned);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt result = lhs.reverseBits();
+    result.print(llvm::outs() << "\nresult: ", isSigned);
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMByteSwapOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMByteSwapOpInterpreter,
+                                                   LLVM::ByteSwapOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = false;
+    llvm::outs() << "Interpreting LLVM::ByteSwap\n";
+    APInt lhs = getIntegerData(operands[0], isSigned);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    APInt result = lhs.byteSwap();
+    result.print(llvm::outs() << "\nresult: ", isSigned);
+    llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
 struct LLVMCopySignOpInterpreter
     : public InterpreterOpInterface::ExternalModel<LLVMCopySignOpInterpreter,
                                                    LLVM::CopySignOp> {
@@ -1334,6 +1372,61 @@ struct LLVMCopySignOpInterpreter
     result.copySign(rhs);
     result.print(llvm::outs() << "\nresult: ");
     llvm::outs() << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMCountLeadingZerosOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMCountLeadingZerosOpInterpreter,
+                                                   LLVM::CountLeadingZerosOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = false;
+    llvm::outs() << "Interpreting LLVM::CountLeadingZeros\n";
+    APInt lhs = getIntegerData(operands[0], isSigned);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    unsigned result = lhs.countLeadingZeros();
+    llvm::outs() << "result: " << result << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMCountTrailingZerosOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMCountTrailingZerosOpInterpreter,
+                                                   LLVM::CountTrailingZerosOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = false;
+    llvm::outs() << "Interpreting LLVM::CountLeadingZeros\n";
+    APInt lhs = getIntegerData(operands[0], isSigned);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+    unsigned result = lhs.countTrailingZeros();
+    llvm::outs() << "result: " << result << "\n";
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct LLVMCtPopOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMCtPopOpInterpreter,
+                                                   LLVM::CtPopOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = false;
+    llvm::outs() << "Interpreting LLVM::CtPop\n";
+    APInt lhs = getIntegerData(operands[0], isSigned);
+    lhs.print(llvm::outs() << "lhs: ", isSigned);
+
+    unsigned result = lhs.popcount();
+    llvm::outs() << "result: " << result << "\n";
     // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
     // Wrap the EvalValue in an ArrayRef and return the EvalResult
@@ -1388,6 +1481,34 @@ struct LLVMAllocaOpInterpreter
   }
 };
 
+struct LLVMConstantOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<LLVMConstantOpInterpreter,
+                                                   LLVM::ConstantOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    llvm::outs() << "Interpreting LLVM::Constant\n";
+    auto att = op->getAttr("value");
+    EvalValue evalResult;
+    if (auto int_att = dyn_cast<IntegerAttr>(att)) {
+        APInt result = int_att.getValue();
+        result.print(llvm::outs() << "Initializing constant ", false);
+        evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+        llvm::outs() << "\n";
+    }
+    else if (auto float_att = dyn_cast<FloatAttr>(att)) {
+        APFloat result = float_att.getValue();
+        result.print(llvm::outs() << "Initializing constant ");
+        evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    }
+    else {
+        llvm::errs() << "Found constant that is neither integer nor float\n";
+    }
+    // Create an EvalValue from the result
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
 } // namespace
 
 void LLVMInterpreter::attachInterface(MLIRContext &context) {
@@ -1419,6 +1540,7 @@ void LLVMInterpreter::attachInterface(MLIRContext &context) {
     // Memory
     LLVM::ReturnOp::attachInterface<LLVMReturnOpInterpreter>(context);
     LLVM::AddressOfOp::attachInterface<LLVMAddressOfOpInterpreter>(context);
+    LLVM::ConstantOp::attachInterface<LLVMConstantOpInterpreter>(context);
 
     // Conversions
     LLVM::TruncOp::attachInterface<LLVMTruncOpInterpreter>(context);
@@ -1458,15 +1580,14 @@ void LLVMInterpreter::attachInterface(MLIRContext &context) {
     LLVM::UMinOp::attachInterface<LLVMUMinOpInterpreter>(context);
 
     // Bit Manipulation Intrinsics
-    LLVM::CopySignOp::attachInterface<LLVMCopySignOpInterpreter>(context);
-    /*
     LLVM::BitReverseOp::attachInterface<LLVMBitReverseOpInterpreter>(context);
     LLVM::ByteSwapOp::attachInterface<LLVMByteSwapOpInterpreter>(context);
+    LLVM::CopySignOp::attachInterface<LLVMCopySignOpInterpreter>(context);
     LLVM::CountLeadingZerosOp::attachInterface<LLVMCountLeadingZerosOpInterpreter>(context);
     LLVM::CountTrailingZerosOp::attachInterface<LLVMCountTrailingZerosOpInterpreter>(context);
     LLVM::CtPopOp::attachInterface<LLVMCtPopOpInterpreter>(context);
+    /*
     LLVM::FShlOp::attachInterface<LLVMFShlOpInterpreter>(context);
     LLVM::FShrOp::attachInterface<LLVMFShrOpInterpreter>(context);
     */
-
 }
