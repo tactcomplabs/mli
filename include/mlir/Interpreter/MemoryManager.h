@@ -31,7 +31,6 @@ public:
   explicit SimpleMemoryManager(size_t initialSize = 1024 * 1024) {
     // Pre-allocate our contiguous memory space
     Mem.resize(initialSize, 0);
-    // NOTE: For debugging
     freeBlocks = {std::make_pair(0, initialSize)};
     next = freeBlocks.begin();
   }
@@ -62,8 +61,8 @@ public:
     throw std::bad_alloc();
   }
 
-  /// Free is a no-op in this naive implementation, but we do erase the allocation
-  /// from our map to prevent bounds checking from succeeding if a region is freed.
+  /// Remove allocation associated with addr from map
+  /// Also reclaims freed memory for future allocations
   void free(uint64_t addr) override {
     uint64_t freedSize = allocations[addr].size;
     allocations.erase(addr);
@@ -81,21 +80,21 @@ public:
     bool openRight = right->first == addr + freedSize;
 
     if (openLeft && openRight) {
-        // Case I: Incorporate both the freed block and r into l
+        // Case I: Incorporate both the freed block and right into left
         left->second += (freedSize + right->second);
         freeBlocks.erase(right); // made redundant by expansion
     }
     else if (openLeft && !openRight) {
-        // Case II: Incorporate the freed block into l
+        // Case II: Incorporate the freed block into left
         left->second += freedSize;
     }
     else if (!openLeft && openRight)  {
-        // Case III: Incorporate the freed block into r
+        // Case III: Incorporate the freed block into right
         right->first = addr;
         right->second += freedSize; 
     }
     else {
-        // Case IV: Bookended by allocated memory, create new entry between l and r
+        // Case IV: Bookended by allocated memory, create new entry between left and right
         auto newBlock = std::make_pair(addr, freedSize);
         freeBlocks.insert(right, newBlock);
     }
