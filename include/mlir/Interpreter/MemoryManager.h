@@ -1,14 +1,10 @@
 #ifndef MLIR_INTERPRETER_MEMORYMANAGER_H
 #define MLIR_INTERPRETER_MEMORYMANAGER_H
 
-#include <cstddef>
-#include <cstdint>
-#include <cstring>
+#include <algorithm>
 #include <list>
 #include <vector>
 #include <map>
-#include <new>
-#include <stdexcept>
 
 namespace mlir{
 
@@ -66,12 +62,15 @@ public:
   void free(uint64_t addr) override {
     uint64_t freedSize = allocations[addr].size;
     allocations.erase(addr);
-    
+
     // Consolidate blocks by reclaiming freed memory
     // Find supremum/infimum of freed block located at addr
     // (i.e. closest available blocks on either side of freed block)
-    auto right = freeBlocks.begin();
-    while (right != freeBlocks.end() && right->first < addr) { ++right; }
+    auto right = std::upper_bound(freeBlocks.begin(), freeBlocks.end(), addr,
+        [](const uint64_t a, const std::pair<uint64_t, uint64_t>& b) {
+            return a < b.first;
+        }
+    );
     auto left = std::prev(right);
 
     // Test if the adjacent blocks of the freed block are available
@@ -82,6 +81,11 @@ public:
     if (openLeft && openRight) {
         // Case I: Incorporate both the freed block and right into left
         left->second += (freedSize + right->second);
+        // The right pointer is now redundant, so we can delete it
+        // Ensure that next != right to prevent dangling pointer
+        if (next == right) {
+            next = ++next == freeBlocks.end() ? freeBlocks.begin() : next;
+        }
         freeBlocks.erase(right); // made redundant by expansion
     }
     else if (openLeft && !openRight) {
@@ -91,7 +95,7 @@ public:
     else if (!openLeft && openRight)  {
         // Case III: Incorporate the freed block into right
         right->first = addr;
-        right->second += freedSize; 
+        right->second += freedSize;
     }
     else {
         // Case IV: Bookended by allocated memory, create new entry between left and right

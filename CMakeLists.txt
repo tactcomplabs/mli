@@ -41,6 +41,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 # Enable RTTI if needed
 set(LLVM_ENABLE_RTTI ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frtti")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g")
 
 # Add subdirectories
 add_subdirectory(lib)
@@ -73,3 +74,9 @@ install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}/MLIConfig.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/MLIConfigVersion.cmake"
     DESTINATION lib/cmake/MLI)
+
+option(ENABLE_TESTING "Enable Testing" OFF)
+if(ENABLE_TESTING)
+  enable_testing()
+  add_subdirectory(tests)
+endif()

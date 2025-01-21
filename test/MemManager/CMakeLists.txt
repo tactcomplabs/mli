@@ -1,0 +1,3 @@
+if (ENABLE_TESTING)
+  add_test(NAME MEM_MANAGER COMMAND memManager)
+endif()
