@@ -20,10 +20,6 @@ find_package(MLIR REQUIRED CONFIG HINTS "${MLIR_DIR}" ${CMAKE_PREFIX_PATH} PATHS
 # Ensure targets are imported
 include("${CMAKE_CURRENT_LIST_DIR}/MLITargets.cmake")
 
-# Debug information (optional)
-message(STATUS "MLIConfig: LLVM_DIR is set to ${LLVM_DIR}")
-message(STATUS "MLIConfig: MLIR_DIR is set to ${MLIR_DIR}")
-
 # Error handling
 if (NOT TARGET LLVM::LLVM)
   message(FATAL_ERROR "${_mli_dependency_error}: LLVM")
