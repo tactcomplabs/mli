@@ -17,13 +17,60 @@
 //===----------------------------------------------------------------------===//
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
+#include "mlir/Bytecode/BytecodeReader.h"
+#include "mlir/Bytecode/BytecodeOpInterface.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/Interpreter/Dialects/FuncInterpreter.h"
 #include "mlir/Interpreter/Dialects/LLVMInterpreter.h"
 #include "mlir/Interpreter/Interpreter.h"
 #include "mlir/Parser/Parser.h"
+#include "mlir/Support/FileUtilities.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/SourceMgr.h"
+
+// Parse an MLIR file, detecting and handling both bytecode and text formats
+static mlir::OwningOpRef<mlir::ModuleOp> parseMLIRFile(llvm::StringRef filename,
+                                                mlir::MLIRContext &context) {
+  // Open the input file
+  std::string errorMessage;
+  auto file = mlir::openInputFile(filename, &errorMessage);
+  if (!file) {
+    llvm::errs() << errorMessage << "\n";
+    return nullptr;
+  }
+
+  // Create a source manager for the input file
+  llvm::SourceMgr sourceMgr;
+  sourceMgr.AddNewSourceBuffer(std::move(file), llvm::SMLoc());
+
+  // Create parser config
+  mlir::ParserConfig config(&context);
+
+  // Try parsing as text first
+  if (auto module = mlir::parseSourceFile<mlir::ModuleOp>(sourceMgr, config)) {
+    llvm::outs() << "Successfully parsed MLIR file: " << filename << "\n";
+    return module;
+  }
+
+  // Reset source manager for bytecode attempt
+  sourceMgr = llvm::SourceMgr();
+  file = mlir::openInputFile(filename, &errorMessage);
+  if (!file) {
+    llvm::errs() << errorMessage << "\n";
+    return nullptr;
+  }
+  sourceMgr.AddNewSourceBuffer(std::move(file), llvm::SMLoc());
+
+  if (auto module = mlir::parseSourceFile<mlir::ModuleOp>(sourceMgr, config)) {
+    llvm::outs() << "Successfully parsed MLIR file: " << filename << "\n";
+    return module;
+  }
+
+  llvm::errs() << "Failed to parse file as either text or bytecode MLIR\n";
+  return nullptr;
+}
 
 int main(int argc, char **argv) {
   mlir::MLIRContext context;
@@ -39,19 +86,18 @@ int main(int argc, char **argv) {
   context.getOrLoadDialect<mlir::LLVM::LLVMDialect>();
   context.getOrLoadDialect<mlir::func::FuncDialect>();
 
-  // Parse the MLIR file
-  auto module = mlir::parseSourceFile<mlir::ModuleOp>(inputFilename, &context);
-  if (!module) {
-    llvm::errs() << "Failed to parse MLIR file: " << inputFilename << "\n";
-    return 1;
-  }
-
   mlir::Interpreter interpreter(context);
 
   // Register the necessary interpreters
   interpreter.registerDialectInterpreter<mlir::FuncInterpreter>();
   interpreter.registerDialectInterpreter<mlir::LLVMInterpreter>();
 
+  // Parse the MLIR file 
+  auto module = parseMLIRFile(inputFilename, context);
+  if (!module) {
+    llvm::errs() << "Failed to parse MLIR file: " << inputFilename << "\n";
+    return 1;
+  }
   // Set the module in the interpreter
   interpreter.setModule(*module);
 
@@ -95,7 +141,7 @@ int main(int argc, char **argv) {
     interpreter.setEvalValue(blockArg, arguments[i]);
   }
 
-  const char* retval;
+  const char *retval = nullptr;
   for (auto &op : entryBlock) {
     llvm::SmallVector<mlir::EvalValue, 4> opOperands;
     for (auto operand : op.getOperands()) {
@@ -115,8 +161,7 @@ int main(int argc, char **argv) {
       return 1;
     }
 
-    unsigned i = 0;
-    for (i = 0; i < op.getNumResults(); ++i) {
+    for (unsigned i = 0; i < op.getNumResults(); ++i) {
       auto resultValue = op.getResult(i);
       if (i < result.getValues().size()) {
         interpreter.setEvalValue(resultValue, result.getValues()[i]);
@@ -128,8 +173,6 @@ int main(int argc, char **argv) {
 
     if (llvm::isa<mlir::LLVM::ReturnOp>(op)) {
       llvm::outs() << "Returning from function.\n";
-      // save the last result
-      // the interpreter will return the last result
       retval = result.getValues().back().getRawData();
       break;
     }

@@ -31,5 +31,6 @@ target_link_libraries(MLIRInterpreter
   PRIVATE
   MLIRIR
   MLIRFuncDialect
+  MLIRLLVMDialect
   MLIRSupport
 )
