@@ -60,6 +60,9 @@ target_link_libraries(MLIRInterpreterLib
   MLIRSupport
   MLIRParser
   MLIRTransforms
+  MLIRBytecodeReader
+  MLIRBytecodeWriter
+  MLIRBytecodeOpInterface
 
   # LLVM libraries
   ${LLVM_LIBS}
