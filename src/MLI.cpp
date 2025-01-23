@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
   // Register command-line options
   llvm::cl::opt<std::string> inputFilename(llvm::cl::Positional, llvm::cl::desc("<input mlir file>"), llvm::cl::Required);
   llvm::cl::opt<std::string> funcName("func", llvm::cl::desc("Specify function entry point"), llvm::cl::value_desc("function"), llvm::cl::init("main"));
-  llvm::cl::list<int32_t> args("args", llvm::cl::desc("List of integer arguments"), llvm::cl::CommaSeparated);
+  llvm::cl::list<std::string> args("args", llvm::cl::desc("List of numeric arguments"), llvm::cl::CommaSeparated);
 
   llvm::cl::ParseCommandLineOptions(argc, argv, "MLIR Interpreter Driver\n");
 
@@ -100,12 +100,6 @@ int main(int argc, char **argv) {
   }
   // Set the module in the interpreter
   interpreter.setModule(*module);
-
-  // Prepare arguments with correct size
-  mlir::SmallVector<mlir::EvalValue, 4> arguments;
-  for (auto &arg : args) {
-    arguments.push_back(interpreter.createEvalValue(mlir::IntegerType::get(&context, 32), &arg, sizeof(arg)));
-  }
 
   // Get the function
   auto func = module->lookupSymbol<mlir::func::FuncOp>(funcName);
@@ -130,9 +124,37 @@ int main(int argc, char **argv) {
   mlir::ScopedRegionFrame regionFrameGuard(interpreter);
 
   // Ensure the number of arguments matches the function signature
-  if (entryBlock.getNumArguments() != arguments.size()) {
+  if (entryBlock.getNumArguments() != args.size()) {
     llvm::errs() << "Mismatch between number of provided arguments and function signature.\n";
     return 1;
+  }
+
+  // Prepare arguments with correct sizes and types
+  mlir::SmallVector<mlir::EvalValue, 4> arguments;
+  int i = 0;
+  for (auto &arg : args) {
+    // Use type from function argument in constructing data
+    auto arg_type = entryBlock.getArgument(i).getType();
+    unsigned width = arg_type.getIntOrFloatBitWidth();
+    if (arg_type.isInteger()) {
+        int64_t int_val = std::stoll(arg);
+        printf("Parsing %s into int with width %u\n", arg.c_str(), width);
+        arguments.push_back(interpreter.createEvalValue(mlir::IntegerType::get(&context, width), &int_val, width));
+    }
+    else if (arg_type.isF32()) {
+        float float_val = std::stof(arg);
+        printf("Parsing %s into float %f with width %u\n", arg.c_str(), float_val, width);
+        arguments.push_back(interpreter.createEvalValue(mlir::Float32Type::get(&context), &float_val, width));
+    }
+    else if (arg_type.isF64()) {
+        double float_val = std::stod(arg);
+        printf("Parsing %s into float %f with width %u\n", arg.c_str(), float_val, width);
+        arguments.push_back(interpreter.createEvalValue(mlir::Float64Type::get(&context), &float_val, width));
+    }
+    else {
+        llvm::errs() << "Unrecognized type, not int or floating point" << "\n";
+    }
+    i++;
   }
 
   // Initialize and map block arguments to EvalValues
@@ -173,8 +195,15 @@ int main(int argc, char **argv) {
 
     if (llvm::isa<mlir::LLVM::ReturnOp>(op)) {
       llvm::outs() << "Returning from function.\n";
-      retval = result.getValues().back().getRawData();
-      break;
+      // save the last result
+      // the interpreter will return the last result
+      auto vals = result.getValues();
+      if (vals.empty()) {
+        retval = "!llvm.void";
+      }
+      else {
+        retval = vals.back().getRawData();
+      }
     }
   }
 
