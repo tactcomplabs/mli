@@ -82,12 +82,12 @@ inline void printOperand(llvm::raw_ostream &os, const std::string &name, const T
   os << dim(name + ": ");
   if constexpr (std::is_same_v<T, llvm::APInt>) {
     value.print(os, isSigned);
+    os << "\n";
   } else if constexpr (std::is_same_v<T, llvm::APFloat>) {
     value.print(os);
   } else {
-    os << highlight(std::to_string(value));
+    os << highlight(std::to_string(value)) << "\n";
   }
-  os << "\n";
 }
 
 template<typename T>
@@ -95,12 +95,12 @@ inline void printResult(llvm::raw_ostream &os, const T &value, bool isSigned = t
   os << dim("result: ");
   if constexpr (std::is_same_v<T, llvm::APInt>) {
     value.print(os, isSigned);
+    os << "\n";
   } else if constexpr (std::is_same_v<T, llvm::APFloat>) {
     value.print(os);
   } else {
-    os << highlight(std::to_string(value));
+    os << highlight(std::to_string(value)) << "\n";
   }
-  os << "\n";
 }
 
 } // namespace fmt
