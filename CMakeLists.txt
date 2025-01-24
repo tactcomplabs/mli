@@ -24,6 +24,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(NO_RTTI "-fno-rtti")
 add_definitions(${NO_RTTI})
 
+# Set default build type to RelWithDebInfo if not specified
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE
+      STRING "Choose the type of build." FORCE)
+
+  # Set the possible values of build type for cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+    "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
+
 # Find LLVM and MLIR
 find_package(LLVM REQUIRED CONFIG)
 find_package(MLIR REQUIRED CONFIG)
