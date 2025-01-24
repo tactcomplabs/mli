@@ -15,62 +15,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
+#include "MLIUtils.h"
+#include "MLIFormat.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
-#include "mlir/Bytecode/BytecodeReader.h"
-#include "mlir/Bytecode/BytecodeOpInterface.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/Interpreter/Dialects/FuncInterpreter.h"
 #include "mlir/Interpreter/Dialects/LLVMInterpreter.h"
 #include "mlir/Interpreter/Interpreter.h"
-#include "mlir/Parser/Parser.h"
-#include "mlir/Support/FileUtilities.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/MemoryBuffer.h"
-#include "llvm/Support/SourceMgr.h"
-
-// Parse an MLIR file, detecting and handling both bytecode and text formats
-static mlir::OwningOpRef<mlir::ModuleOp> parseMLIRFile(llvm::StringRef filename,
-                                                mlir::MLIRContext &context) {
-  // Open the input file
-  std::string errorMessage;
-  auto file = mlir::openInputFile(filename, &errorMessage);
-  if (!file) {
-    llvm::errs() << errorMessage << "\n";
-    return nullptr;
-  }
-
-  // Create a source manager for the input file
-  llvm::SourceMgr sourceMgr;
-  sourceMgr.AddNewSourceBuffer(std::move(file), llvm::SMLoc());
-
-  // Create parser config
-  mlir::ParserConfig config(&context);
-
-  // Try parsing as text first
-  if (auto module = mlir::parseSourceFile<mlir::ModuleOp>(sourceMgr, config)) {
-    llvm::outs() << "Successfully parsed MLIR file: " << filename << "\n";
-    return module;
-  }
-
-  // Reset source manager for bytecode attempt
-  sourceMgr = llvm::SourceMgr();
-  file = mlir::openInputFile(filename, &errorMessage);
-  if (!file) {
-    llvm::errs() << errorMessage << "\n";
-    return nullptr;
-  }
-  sourceMgr.AddNewSourceBuffer(std::move(file), llvm::SMLoc());
-
-  if (auto module = mlir::parseSourceFile<mlir::ModuleOp>(sourceMgr, config)) {
-    llvm::outs() << "Successfully parsed MLIR file: " << filename << "\n";
-    return module;
-  }
-
-  llvm::errs() << "Failed to parse file as either text or bytecode MLIR\n";
-  return nullptr;
-}
 
 int main(int argc, char **argv) {
   mlir::MLIRContext context;
@@ -93,11 +47,12 @@ int main(int argc, char **argv) {
   interpreter.registerDialectInterpreter<mlir::LLVMInterpreter>();
 
   // Parse the MLIR file 
-  auto module = parseMLIRFile(inputFilename, context);
+  auto module = mli::parseMLIRFile(inputFilename, context);
   if (!module) {
-    llvm::errs() << "Failed to parse MLIR file: " << inputFilename << "\n";
+    llvm::errs() << mli::fmt::error("Failed to parse MLIR file: " + inputFilename) << "\n";
     return 1;
   }
+  llvm::outs() << mli::fmt::success("Successfully parsed MLIR file: " + inputFilename) << "\n";
   // Set the module in the interpreter
   interpreter.setModule(*module);
 

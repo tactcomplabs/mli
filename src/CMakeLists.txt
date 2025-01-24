@@ -14,7 +14,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-add_executable(mli MLI.cpp)
+add_executable(mli 
+  MLI.cpp
+  MLIUtils.cpp
+)
 
 target_include_directories(mli PRIVATE
   ${CMAKE_SOURCE_DIR}/include
