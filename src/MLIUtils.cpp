@@ -43,27 +43,13 @@ mlir::OwningOpRef<mlir::ModuleOp> parseMLIRFile(llvm::StringRef filename,
   // Create parser config
   mlir::ParserConfig config(&context);
 
-  // Try parsing as text first
+  // Attempt to parse the file (text or bytecode)
   if (auto module = mlir::parseSourceFile<mlir::ModuleOp>(sourceMgr, config)) {
     llvm::outs() << "Successfully parsed MLIR file: " << filename << "\n";
     return module;
   }
 
-  // Reset source manager for bytecode attempt
-  sourceMgr = llvm::SourceMgr();
-  file = mlir::openInputFile(filename, &errorMessage);
-  if (!file) {
-    llvm::errs() << errorMessage << "\n";
-    return nullptr;
-  }
-  sourceMgr.AddNewSourceBuffer(std::move(file), llvm::SMLoc());
-
-  if (auto module = mlir::parseSourceFile<mlir::ModuleOp>(sourceMgr, config)) {
-    llvm::outs() << "Successfully parsed MLIR file: " << filename << "\n";
-    return module;
-  }
-
-  llvm::errs() << "Failed to parse file as either text or bytecode MLIR\n";
+  llvm::errs() << "Failed to parse MLIR file (unsupported format)\n";
   return nullptr;
 }
 
