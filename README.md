@@ -23,3 +23,7 @@ cmake -G Ninja -DLLVM_DIR=/opt/homebrew/opt/llvm@19/lib/cmake/llvm -DMLIR_DIR=/o
 - `mli` executable takes in a `.mlir` file and runs the interpreter on it.
 
 _Example_: `build/src/mli <path-to-mlir-file> --args=5,10`
+
+# Adding New Dialects
+
+See [Adding New Dialects](docs/AddingDialects.md)
