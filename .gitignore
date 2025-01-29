@@ -1,4 +1,6 @@
 .cache/clangd/index
 build
-include/mlir/Interpreter/InterpreterOpInterface.cpp.inc
+.inc
 .vscode
+.markdownlint.json
+.DS_Store
