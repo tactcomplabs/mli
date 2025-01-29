@@ -1,5 +1,4 @@
 @PACKAGE_INIT@
-
 include(CMakeFindDependencyMacro)
 
 # Locate dependencies
@@ -9,22 +8,40 @@ set(_mli_dependency_error "Could not find required dependency")
 if (NOT LLVM_DIR)
   set(LLVM_DIR "@LLVM_INSTALL_PREFIX@/lib/cmake/llvm")
 endif()
-find_package(LLVM REQUIRED CONFIG HINTS "${LLVM_DIR}" ${CMAKE_PREFIX_PATH} PATHS "/usr/local/lib/cmake/llvm" NO_DEFAULT_PATH)
+
+# Find LLVM
+find_package(LLVM REQUIRED CONFIG 
+  HINTS 
+    "${LLVM_DIR}"
+    "@LLVM_INSTALL_PREFIX@/lib/cmake/llvm"
+  PATHS
+    ${CMAKE_PREFIX_PATH}
+    "/usr/local/lib/cmake/llvm"
+)
 
 # Set paths for MLIR
 if (NOT MLIR_DIR)
   set(MLIR_DIR "@LLVM_INSTALL_PREFIX@/lib/cmake/mlir")
 endif()
-find_package(MLIR REQUIRED CONFIG HINTS "${MLIR_DIR}" ${CMAKE_PREFIX_PATH} PATHS "/usr/local/lib/cmake/mlir" NO_DEFAULT_PATH)
+
+# Find MLIR
+find_package(MLIR REQUIRED CONFIG
+  HINTS
+    "${MLIR_DIR}"
+    "@LLVM_INSTALL_PREFIX@/lib/cmake/mlir"
+  PATHS
+    ${CMAKE_PREFIX_PATH}
+    "/usr/local/lib/cmake/mlir"
+)
 
 # Ensure targets are imported
 include("${CMAKE_CURRENT_LIST_DIR}/MLITargets.cmake")
 
-# Error handling
-if (NOT TARGET LLVM::LLVM)
-  message(FATAL_ERROR "${_mli_dependency_error}: LLVM")
+# Make sure we found LLVM & MLIR
+if (NOT LLVM_FOUND)
+  message(FATAL_ERROR "${_mli_dependency_error}: LLVM (looked in ${LLVM_DIR})")
 endif()
 
-if (NOT TARGET MLIR::MLIR)
-  message(FATAL_ERROR "${_mli_dependency_error}: MLIR")
+if (NOT MLIR_FOUND)
+  message(FATAL_ERROR "${_mli_dependency_error}: MLIR (looked in ${MLIR_DIR})")
 endif()
