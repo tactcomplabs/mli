@@ -10,5 +10,5 @@ if(ENABLE_TESTING)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMAND mli test_intr_log.bc --args=1.5)
     set_tests_properties(INTR_LOG INTR_LOG_BYTECODE PROPERTIES TIMEOUT 60 LABELS "all"
-                                                    PASS_REGULAR_EXPRESSION "0.405465096")
+                                                    PASS_REGULAR_EXPRESSION ".+result: .+0.405465096")
 endif()

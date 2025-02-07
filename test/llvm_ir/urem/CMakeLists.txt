@@ -10,5 +10,5 @@ if(ENABLE_TESTING)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMAND mli test_urem.bc --args=1,2)
     set_tests_properties(UREM UREM_BYTECODE PROPERTIES TIMEOUT 60 LABELS "all"
-                                                    PASS_REGULAR_EXPRESSION "1")
+                                                    PASS_REGULAR_EXPRESSION ".+result: .+1")
 endif()

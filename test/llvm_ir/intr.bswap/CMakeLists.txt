@@ -10,5 +10,5 @@ if(ENABLE_TESTING)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMAND mli test_intr_bswap.bc --args=100000)
     set_tests_properties(INTR_BSWAP INTR_BSWAP_BYTECODE PROPERTIES TIMEOUT 60 LABELS "all"
-                                                    PASS_REGULAR_EXPRESSION "2693136640")
+                                                    PASS_REGULAR_EXPRESSION ".+result: .+2693136640")
 endif()

@@ -10,5 +10,5 @@ if(ENABLE_TESTING)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMAND mli test_trunc.bc --args=9223372036854775807)
     set_tests_properties(TRUNC TRUNC_BYTECODE PROPERTIES TIMEOUT 60 LABELS "all"
-                                                    PASS_REGULAR_EXPRESSION "-1")
+                                                    PASS_REGULAR_EXPRESSION ".+result: .+-1")
 endif()

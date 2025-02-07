@@ -10,5 +10,5 @@ if(ENABLE_TESTING)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMAND mli test_fsub.bc --args=1.5,2.25)
     set_tests_properties(FSUB FSUB_BYTECODE PROPERTIES TIMEOUT 60 LABELS "all"
-                                                    PASS_REGULAR_EXPRESSION "-0.75")
+                                                    PASS_REGULAR_EXPRESSION ".+result: .+-0.75")
 endif()

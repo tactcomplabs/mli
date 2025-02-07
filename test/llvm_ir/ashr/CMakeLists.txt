@@ -10,5 +10,5 @@ if(ENABLE_TESTING)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMAND mli test_ashr.bc --args=1,2)
     set_tests_properties(ASHR ASHR_BYTECODE PROPERTIES TIMEOUT 60 LABELS "all"
-                                                    PASS_REGULAR_EXPRESSION "0")
+                                                    PASS_REGULAR_EXPRESSION ".+result: .+0")
 endif()

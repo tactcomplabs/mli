@@ -10,5 +10,5 @@ if(ENABLE_TESTING)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMAND mli test_intr_smax.bc --args=1,2)
     set_tests_properties(INTR_SMAX INTR_SMAX_BYTECODE PROPERTIES TIMEOUT 60 LABELS "all"
-                                                    PASS_REGULAR_EXPRESSION "2")
+                                                    PASS_REGULAR_EXPRESSION ".+result: .+2")
 endif()

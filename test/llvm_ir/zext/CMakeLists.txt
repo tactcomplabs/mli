@@ -10,5 +10,5 @@ if(ENABLE_TESTING)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMAND mli test_zext.bc --args=-1)
     set_tests_properties(ZEXT ZEXT_BYTECODE PROPERTIES TIMEOUT 60 LABELS "all"
-                                                    PASS_REGULAR_EXPRESSION "4294967295")
+                                                    PASS_REGULAR_EXPRESSION ".+result: .+4294967295")
 endif()

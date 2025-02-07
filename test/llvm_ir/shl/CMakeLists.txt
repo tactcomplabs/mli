@@ -10,5 +10,5 @@ if(ENABLE_TESTING)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMAND mli test_shl.bc --args=1,2)
     set_tests_properties(SHL SHL_BYTECODE PROPERTIES TIMEOUT 60 LABELS "all"
-                                                    PASS_REGULAR_EXPRESSION "4")
+                                                    PASS_REGULAR_EXPRESSION ".+result: .+4")
 endif()

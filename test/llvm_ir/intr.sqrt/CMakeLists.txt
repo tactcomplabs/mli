@@ -10,5 +10,5 @@ if(ENABLE_TESTING)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMAND mli test_intr_sqrt.bc --args=2025)
     set_tests_properties(INTR_SQRT INTR_SQRT_BYTECODE PROPERTIES TIMEOUT 60 LABELS "all"
-                                                    PASS_REGULAR_EXPRESSION "45")
+                                                    PASS_REGULAR_EXPRESSION ".+result: .+45")
 endif()

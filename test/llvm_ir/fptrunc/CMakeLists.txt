@@ -10,5 +10,5 @@ if(ENABLE_TESTING)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMAND mli test_fptrunc.bc --args=3.14159268)
     set_tests_properties(FPTRUNC FPTRUNC_BYTECODE PROPERTIES TIMEOUT 60 LABELS "all"
-                                                    PASS_REGULAR_EXPRESSION "3.1415925")
+                                                    PASS_REGULAR_EXPRESSION ".+result: .+3.1415925")
 endif()

@@ -21,8 +21,8 @@ if(ENABLE_TESTING)
     COMMAND mli test_bitcast.bc --args=1.5 --func=fptoi)
   set_tests_properties(
     BITCAST_INTTOFP BITCAST_INTTOFP_BYTECODE PROPERTIES TIMEOUT 60 LABELS "all"
-                                        PASS_REGULAR_EXPRESSION "1.5")
+                                        PASS_REGULAR_EXPRESSION ".+result: .+1.5")
     set_tests_properties(
     BITCAST_FPTOINT BITCAST_FPTOINT_BYTECODE PROPERTIES TIMEOUT 60 LABELS "all"
-                                        PASS_REGULAR_EXPRESSION "1069547520")
+                                        PASS_REGULAR_EXPRESSION ".+result: .+1069547520")
 endif()

@@ -10,5 +10,5 @@ if(ENABLE_TESTING)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMAND mli test_xor.bc --args=1,2)
     set_tests_properties(XOR XOR_BYTECODE PROPERTIES TIMEOUT 60 LABELS "all"
-                                                    PASS_REGULAR_EXPRESSION "3")
+                                                    PASS_REGULAR_EXPRESSION ".+result: .+3")
 endif()

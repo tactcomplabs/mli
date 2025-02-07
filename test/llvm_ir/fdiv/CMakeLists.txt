@@ -10,5 +10,5 @@ if(ENABLE_TESTING)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMAND mli test_fdiv.bc --args=1.0,2.0)
     set_tests_properties(FDIV FDIV_BYTECODE PROPERTIES TIMEOUT 60 LABELS "all"
-                                                    PASS_REGULAR_EXPRESSION "0.5")
+                                                    PASS_REGULAR_EXPRESSION ".+result: .+0.5")
 endif()

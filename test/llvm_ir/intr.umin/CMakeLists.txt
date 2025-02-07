@@ -10,5 +10,5 @@ if(ENABLE_TESTING)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMAND mli test_intr_umin.bc --args=1,2)
     set_tests_properties(INTR_UMIN INTR_UMIN_BYTECODE PROPERTIES TIMEOUT 60 LABELS "all"
-                                                    PASS_REGULAR_EXPRESSION "1")
+                                                    PASS_REGULAR_EXPRESSION ".+result: .+1")
 endif()

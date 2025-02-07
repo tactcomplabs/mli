@@ -159,7 +159,10 @@ if(ENABLE_TESTING)
       FCMP_UGT_BYTECODE
       FCMP_UGE_BYTECODE)
 
-  set_tests_properties(${FCMP_TESTS} PROPERTIES TIMEOUT 60 LABELS "all"
-                                                PASS_REGULAR_EXPRESSION "1")
+foreach(test ${FCMP_TESTS})
+  set_tests_properties(${test} PROPERTIES TIMEOUT 60 LABELS "all"
+                                                PASS_REGULAR_EXPRESSION ".+result: .+1")
+endforeach()
+    
 
 endif()

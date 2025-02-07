@@ -10,5 +10,5 @@ if(ENABLE_TESTING)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMAND mli test_fadd.bc --args=1.5,2.25)
     set_tests_properties(FADD FADD_BYTECODE PROPERTIES TIMEOUT 60 LABELS "all"
-                                                    PASS_REGULAR_EXPRESSION "3.75")
+                                                    PASS_REGULAR_EXPRESSION ".+result: .+3.75")
 endif()
