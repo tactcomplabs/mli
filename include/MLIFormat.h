@@ -93,7 +93,7 @@ inline void printOperand(llvm::raw_ostream &os, const std::string &name, const T
 template<typename T>
 inline void printResult(llvm::raw_ostream &os, const T &value, bool isSigned = true) {
   os << dim("result: ");
-  if constexpr (std::is_same_v<T, llvm::APInt>) {
+  if constexpr (std::is_same_v<T, llvm::APInt> || std::is_same_v<T, llvm::APSInt>) {
     value.print(os, isSigned);
     os << "\n";
   } else if constexpr (std::is_same_v<T, llvm::APFloat>) {
