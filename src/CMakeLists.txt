@@ -14,7 +14,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-add_executable(mli 
+add_executable(mli
   MLI.cpp
   MLIUtils.cpp
 )
@@ -61,6 +61,18 @@ target_link_libraries(mli
 # Ensure mli depends on the generated headers
 add_dependencies(mli MLIRInterpreterOpInterfaceIncGen)
 
+if(APPLE)
+  set_target_properties(mli PROPERTIES
+        BUILD_WITH_INSTALL_RPATH TRUE
+        INSTALL_RPATH "@executable_path/../lib"
+        INSTALL_NAME_DIR "@executable_path/../lib"
+    )
+else()
+  set_target_properties(mli PROPERTIES
+        BUILD_WITH_INSTALL_RPATH TRUE
+        INSTALL_RPATH "$ORIGIN/../lib"
+    )
+endif()
 # Install the executable
 install(TARGETS mli
   RUNTIME DESTINATION bin
