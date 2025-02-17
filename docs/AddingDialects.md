@@ -64,7 +64,25 @@ add_subdirectory(LLVM)
 add_subdirectory(Arith)  # Add new dialect directory
 ```
 
-#### d. `src/CMakeLists.txt`
+#### d. `lib/Interpreter/Dialects/Arith/CMakeLists.txt` (new file)
+```cmake
+add_mlir_library(MLIRArithInterpreter
+  ArithInterpreter.cpp
+
+  ADDITIONAL_HEADER_DIRS
+  ${MLIR_MAIN_INCLUDE_DIR}/mlir/Interpreter
+
+  DEPENDS
+  MLIRInterpreterOpInterfaceIncGen
+
+  LINK_LIBS PUBLIC
+  MLIRInterpreter
+  MLIRArithDialect
+  MLIRSupport
+  )
+```
+
+#### e. `src/CMakeLists.txt`
 
 ```cmake
 target_link_libraries(mli
@@ -121,9 +139,9 @@ lib/Interpreter/Dialects/Arith/
 └── CMakeLists.txt
 
 include/mlir/Interpreter/Dialects/
-├── ArithInterpreter.cpp
-├── FuncInterpreter.cpp
-├── LLVMInterpreter.cpp
+├── ArithInterpreter.h
+├── FuncInterpreter.h
+├── LLVMInterpreter.h
 └── CMakeLists.txt
 
 test/arith/
