@@ -419,7 +419,7 @@ struct LLVMICmpOpInterpreter
             result = lhs.eq(rhs);
     }
 
-    llvm::outs() << "result: " << result << "\n";
+    mli::fmt::printResult(llvm::outs(), result);
     // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
     return interpreter.createBindValueResult(evalResult);
@@ -492,7 +492,7 @@ struct LLVMFCmpOpInterpreter
             result = true;
     }
 
-    llvm::outs() << "result: " << result << "\n";
+    mli::fmt::printResult(llvm::outs(), result);
     // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
     // Wrap the EvalValue in an ArrayRef and return the EvalResult
@@ -771,7 +771,7 @@ struct LLVMFPToSIOpInterpreter
     APSInt result = APSInt(result_width, isUnsigned);
     bool isExact;
     lhs.convertToInteger(result, llvm::RoundingMode::TowardZero, &isExact);
-    llvm::outs() << "result: " << result << "\n";
+    mli::fmt::printResult(llvm::outs(), result);
 
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
     // Wrap the EvalValue in an ArrayRef and return the EvalResult
@@ -793,7 +793,7 @@ struct LLVMFPToUIOpInterpreter
     APSInt result = APSInt(result_width, isUnsigned);
     bool isExact;
     lhs.convertToInteger(result, llvm::RoundingMode::TowardZero, &isExact);
-    llvm::outs() << "result: " << result << "\n";
+    mli::fmt::printResult(llvm::outs(), result);
 
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
     // Wrap the EvalValue in an ArrayRef and return the EvalResult
@@ -1337,7 +1337,7 @@ struct LLVMCountLeadingZerosOpInterpreter
     APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
     unsigned result = lhs.countLeadingZeros();
-    llvm::outs() << "result: " << result << "\n";
+    mli::fmt::printResult(llvm::outs(), result);
     // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
     // Wrap the EvalValue in an ArrayRef and return the EvalResult
@@ -1355,7 +1355,7 @@ struct LLVMCountTrailingZerosOpInterpreter
     APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
     unsigned result = lhs.countTrailingZeros();
-    llvm::outs() << "result: " << result << "\n";
+    mli::fmt::printResult(llvm::outs(), result);
     // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
     // Wrap the EvalValue in an ArrayRef and return the EvalResult
@@ -1374,7 +1374,7 @@ struct LLVMCtPopOpInterpreter
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
 
     unsigned result = lhs.popcount();
-    llvm::outs() << "result: " << result << "\n";
+    mli::fmt::printResult(llvm::outs(), result);
     // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
     return interpreter.createBindValueResult(evalResult);
