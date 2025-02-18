@@ -44,9 +44,14 @@ include(AddLLVM)
 include(AddMLIR)
 
 # Include directories
+include_directories(BEFORE
+  # Always prioritize the copies of files that are inside this
+  # repo over ones found from previous installations
+  ${CMAKE_SOURCE_DIR}/include
+  ${CMAKE_BINARY_DIR}/include
+)
 include_directories(${LLVM_INCLUDE_DIRS})
 include_directories(${MLIR_INCLUDE_DIRS})
-include_directories(${CMAKE_SOURCE_DIR}/include)
 
 # Enable RTTI if needed
 set(LLVM_ENABLE_RTTI ON)

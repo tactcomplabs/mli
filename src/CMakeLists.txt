@@ -19,7 +19,7 @@ add_executable(mli
   MLIUtils.cpp
 )
 
-target_include_directories(mli PRIVATE
+target_include_directories(mli BEFORE PRIVATE
   ${CMAKE_SOURCE_DIR}/include
   ${CMAKE_BINARY_DIR}/include  # Include generated headers
 )
