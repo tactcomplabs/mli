@@ -24,7 +24,6 @@ add_library(MLIRInterpreterLib SHARED
   Interpreter/InterpreterOpInterface.cpp
   Interpreter/Dialects/Func/FuncInterpreter.cpp
   Interpreter/Dialects/LLVM/LLVMInterpreter.cpp
-  ${CMAKE_SOURCE_DIR}/src/MLIUtils.cpp
 )
 
 # Include directories for the library
