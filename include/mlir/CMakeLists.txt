@@ -22,6 +22,7 @@ add_library(MLIRInterpreter
   InterpreterOpInterface.cpp
   Dialects/FuncInterpreter.cpp
   Dialects/LLVMInterpreter.cpp
+  Dialects/ArithInterpreter.cpp
 )
 
 target_include_directories(MLIRInterpreter PRIVATE
@@ -33,5 +34,6 @@ target_link_libraries(MLIRInterpreter
   MLIRIR
   MLIRFuncDialect
   MLIRLLVMDialect
+  MLIRArithDialect
   MLIRSupport
 )

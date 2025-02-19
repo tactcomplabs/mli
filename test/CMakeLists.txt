@@ -1,4 +1,5 @@
 if (ENABLE_TESTING)
   add_subdirectory(llvm_ir)
+  # TODO: add_subdirectory(arith)
   add_subdirectory(mem_manager)
 endif()

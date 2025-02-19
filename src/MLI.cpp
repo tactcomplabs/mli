@@ -19,10 +19,12 @@
 #include "MLIFormat.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
-#include "mlir/IR/Builders.h"
+#include "mlir/Dialect/Arith/IR/Arith.h" 
 #include "mlir/Interpreter/Dialects/FuncInterpreter.h"
 #include "mlir/Interpreter/Dialects/LLVMInterpreter.h"
+#include "mlir/Interpreter/Dialects/ArithInterpreter.h"
 #include "mlir/Interpreter/Interpreter.h"
+#include "mlir/IR/Builders.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -39,12 +41,14 @@ int main(int argc, char **argv) {
   // Register the necessary dialects
   context.getOrLoadDialect<mlir::LLVM::LLVMDialect>();
   context.getOrLoadDialect<mlir::func::FuncDialect>();
+  context.getOrLoadDialect<mlir::arith::ArithDialect>();
 
   mlir::Interpreter interpreter(context);
 
   // Register the necessary interpreters
   interpreter.registerDialectInterpreter<mlir::FuncInterpreter>();
   interpreter.registerDialectInterpreter<mlir::LLVMInterpreter>();
+  interpreter.registerDialectInterpreter<mlir::ArithInterpreter>();
 
   // Parse the MLIR file 
   auto module = mli::parseMLIRFile(inputFilename, context);
