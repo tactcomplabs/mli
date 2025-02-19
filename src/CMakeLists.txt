@@ -16,7 +16,6 @@
 # limitations under the License.
 add_executable(mli
   MLI.cpp
-  MLIUtils.cpp
 )
 
 target_include_directories(mli BEFORE PRIVATE
