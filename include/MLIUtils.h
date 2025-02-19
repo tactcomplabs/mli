@@ -15,15 +15,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-
 #ifndef MLI_UTILS_H
 #define MLI_UTILS_H
 
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/IR/OwningOpRef.h"
+#include "mlir/Interpreter/InterpreterOpInterface.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/ADT/APInt.h"
+#include "llvm/ADT/APFloat.h"
 
 namespace mli {
 
@@ -40,6 +42,19 @@ bool validateFunctionArguments(mlir::func::FuncOp funcOp,
                                llvm::ArrayRef<int32_t> providedArgs,
                                std::string &errorMessage);
 
+
+// ---------------------------------------------------------------------------// 
+// APInt and APFloat utilities
+// ---------------------------------------------------------------------------//
+llvm::APInt getIntegerData(const mlir::EvalValue val, bool isSigned = false);
+llvm::APFloat getFloatData(const mlir::EvalValue val);
+llvm::APFloat compute(const llvm::APFloat &num, double (*func)(double));
+llvm::APFloat compute(const llvm::APFloat &lhs, const llvm::APFloat &rhs, double (*func)(double, double));
+llvm::APFloat compute(const llvm::APFloat &lhs, const llvm::APInt &rhs, double (*func)(double, int64_t));
+llvm::APFloat::Semantics getFloatSemantics(const mlir::Type result_type);
+
 } // namespace mli
 
+
 #endif // MLI_UTILS_H
+

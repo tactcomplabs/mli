@@ -16,6 +16,7 @@
 // limitations under the License.
 //===----------------------------------------------------------------------===//
 #include "MLIFormat.h"
+#include "MLIUtils.h"
 #include "mlir/Interpreter/Dialects/LLVMInterpreter.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/IR/MLIRContext.h"
@@ -26,78 +27,8 @@
 #include "llvm/ADT/APFloat.h"
 
 using namespace mlir;
+using namespace mli;
 typedef llvm::APFloat::Semantics Semantics;
-
-APInt getIntegerData(const EvalValue val, const bool isSigned = false) {
-    // NOTE: Is this a bad access if sizeof(val) < sizeof(num)?
-    // When constructing val from the CLI args, we supply its width
-    // This is deduced from the type of the function's arguments
-    // Calling getData with uint64_t could read more memory than actually allocated for val
-    uint64_t num = val.getData<uint64_t>().front();
-    size_t width = val.getRawDataSizeInBytes();
-    return APInt(width, num, isSigned);
-}
-
-// Get semantics for given MLIR Type
-// These are used in constructing/converting APFloat types
-Semantics getFloatSemantics(const Type result_type) {
-    if (result_type.isF16()) { // 16 bit float
-        return Semantics::S_IEEEhalf;
-    }
-    else if (result_type.isBF16()) { // 16 bit brain float
-        return Semantics::S_BFloat;
-    }
-    else if (result_type.isF32()) { // standard 32 bit float
-        return Semantics::S_IEEEsingle;
-    }
-    return Semantics::S_IEEEdouble;
-}
-
-APFloat getFloatData(const EvalValue val) {
-    if (val.getType().isF64()) {
-        double num = val.getData<double>().front();
-        return APFloat(num);
-    }
-    float num = val.getData<float>().front();
-    return APFloat(num);
-}
-
-// The APFloat library doesn't support standard math functions
-// Convert num to double, compute function, and store result back into APFloat
-// For unary operations (std::sqrt, std::cos, etc.)
-APFloat compute(const APFloat& num, double (*func)(double)) {
-    double tmp = num.convertToDouble();
-    tmp = func(tmp);
-    APFloat result = APFloat(tmp);
-    bool losesInfo;
-    // Copy semantics from original num to ensure that dtype is the same
-    result.convert(num.getSemantics(), llvm::RoundingMode::TowardZero, &losesInfo);
-    return result;
-}
-
-// For binary operations on two floats (std::pow, std::fmax)
-APFloat compute(const APFloat& lhs, const APFloat& rhs, double (*func)(double, double)) {
-    double tmp1 = lhs.convertToDouble();
-    double tmp2 = rhs.convertToDouble();
-    tmp1 = func(tmp1, tmp2);
-    APFloat result = APFloat(tmp1);
-    bool losesInfo;
-    // NOTE: Is this a good idea? What if signature is (f32, f32) -> f64?
-    result.convert(lhs.getSemantics(), llvm::RoundingMode::TowardZero, &losesInfo);
-    return result;
-}
-
-// For binary operations on float and int (std::powi)
-APFloat compute(const APFloat& lhs, const APInt& rhs, double (*func)(double, int64_t)) {
-    double tmp1 = lhs.convertToDouble();
-    int64_t tmp2 = rhs.getSExtValue();
-    tmp1 = func(tmp1, tmp2);
-    APFloat result = APFloat(tmp1);
-    bool losesInfo;
-    // NOTE: Is this a good idea? What if signature is (f32, f32) -> f64?
-    result.convert(lhs.getSemantics(), llvm::RoundingMode::TowardZero, &losesInfo);
-    return result;
-}
 
 namespace {
 
