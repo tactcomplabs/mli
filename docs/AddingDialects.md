@@ -65,6 +65,7 @@ add_subdirectory(Arith)  # Add new dialect directory
 ```
 
 #### d. `lib/Interpreter/Dialects/Arith/CMakeLists.txt` (new file)
+
 ```cmake
 add_mlir_library(MLIRArithInterpreter
   ArithInterpreter.cpp
@@ -79,7 +80,7 @@ add_mlir_library(MLIRArithInterpreter
   MLIRInterpreter
   MLIRArithDialect
   MLIRSupport
-  )
+)
 ```
 
 #### e. `src/CMakeLists.txt`
