@@ -19,10 +19,12 @@
 #include "MLIFormat.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
-#include "mlir/IR/Builders.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Interpreter/Dialects/FuncInterpreter.h"
 #include "mlir/Interpreter/Dialects/LLVMInterpreter.h"
+#include "mlir/Interpreter/Dialects/ArithInterpreter.h"
 #include "mlir/Interpreter/Interpreter.h"
+#include "mlir/IR/Builders.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -39,12 +41,14 @@ int main(int argc, char **argv) {
   // Register the necessary dialects
   context.getOrLoadDialect<mlir::LLVM::LLVMDialect>();
   context.getOrLoadDialect<mlir::func::FuncDialect>();
+  context.getOrLoadDialect<mlir::arith::ArithDialect>();
 
   mlir::Interpreter interpreter(context);
 
   // Register the necessary interpreters
   interpreter.registerDialectInterpreter<mlir::FuncInterpreter>();
   interpreter.registerDialectInterpreter<mlir::LLVMInterpreter>();
+  interpreter.registerDialectInterpreter<mlir::ArithInterpreter>();
 
   // Parse the MLIR file 
   auto module = mli::parseMLIRFile(inputFilename, context);
@@ -53,6 +57,7 @@ int main(int argc, char **argv) {
     return 1;
   }
   llvm::outs() << mli::fmt::success("Successfully parsed MLIR file: " + inputFilename) << "\n";
+  
   // Set the module in the interpreter
   interpreter.setModule(*module);
 
@@ -118,7 +123,7 @@ int main(int argc, char **argv) {
     interpreter.setEvalValue(blockArg, arguments[i]);
   }
 
-  const char *retval = nullptr;
+  mlir::EvalValue lastReturnValue;
   for (auto &op : entryBlock) {
     llvm::SmallVector<mlir::EvalValue, 4> opOperands;
     for (auto operand : op.getOperands()) {
@@ -135,9 +140,28 @@ int main(int argc, char **argv) {
 
     if (result.getKind() == mlir::EvalResultKind::Error) {
       llvm::errs() << "Error occurred during execution of operation: " << op << "\n";
+      llvm::errs() << "Error message: " << result.getError().getMessage() << "\n";
       return 1;
     }
 
+    // Handle return values from any dialect
+    if (result.getKind() == mlir::EvalResultKind::ReturnValue) {
+      llvm::outs() << mli::fmt::info("Return operation detected: " + op.getName().getStringRef().str()) << "\n";
+      auto returnVals = result.getValues();
+      if (!returnVals.empty()) {
+        lastReturnValue = returnVals.back();
+        // Print the return value type
+        std::string typeStr;
+        llvm::raw_string_ostream typeOs(typeStr);
+        lastReturnValue.getType().print(typeOs);
+        llvm::outs() << mli::fmt::dim("Return type: ") << mli::fmt::type(typeStr) << "\n";
+      } else {
+        llvm::outs() << mli::fmt::dim("Void return detected") << "\n";
+      }
+      break;
+    }
+
+    // For non-return operations, bind results to the interpreter context
     for (unsigned i = 0; i < op.getNumResults(); ++i) {
       auto resultValue = op.getResult(i);
       if (i < result.getValues().size()) {
@@ -147,26 +171,13 @@ int main(int argc, char **argv) {
         return 1;
       }
     }
-
-    if (llvm::isa<mlir::LLVM::ReturnOp>(op)) {
-      llvm::outs() << "Returning from function.\n";
-      // save the last result
-      // the interpreter will return the last result
-      auto vals = result.getValues();
-      if (vals.empty()) {
-        retval = "!llvm.void";
-      }
-      else {
-        retval = vals.back().getRawData();
-      }
-    }
   }
 
-  // Look for the value of the variable being returned
-  if (retval) {
-    llvm::outs() << "ret: " << retval << "\n";
+  // Print final return status
+  if (lastReturnValue) {
+    llvm::outs() << mli::fmt::success("Function execution completed with return value") << "\n";
   } else {
-    llvm::errs() << "No return values produced by function execution. UH OH!\n";
+    llvm::outs() << mli::fmt::info("Function execution completed (void return)") << "\n";
   }
 
   return 0;

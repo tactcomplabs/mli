@@ -14,13 +14,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-add_subdirectory(lib)
+add_subdirectory(Interpreter)
 
 # Build the interpreter library
 add_library(MLIRInterpreter
   Interpreter.cpp
   InterpreterOpInterface.cpp
   Dialects/FuncInterpreter.cpp
+  Dialects/LLVMInterpreter.cpp
+  Dialects/ArithInterpreter.cpp
 )
 
 target_include_directories(MLIRInterpreter PRIVATE
@@ -32,5 +34,6 @@ target_link_libraries(MLIRInterpreter
   MLIRIR
   MLIRFuncDialect
   MLIRLLVMDialect
+  MLIRArithDialect
   MLIRSupport
 )
