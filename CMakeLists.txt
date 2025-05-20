@@ -90,6 +90,10 @@ install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}/MLIConfigVersion.cmake"
     DESTINATION lib/cmake/MLI)
 
+# Detect if Polygeist has been built
+# TODO: Make this less brittle, since the user can specify the directory name
+file(GLOB POLYGEIST_SRC "polygeist")
+    
 option(ENABLE_TESTING "Enable Testing" OFF)
 if(ENABLE_TESTING)
   enable_testing()

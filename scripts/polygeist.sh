@@ -50,6 +50,7 @@ for cmd in git cmake ninja; do
 done
 
 #─── Clone and Prepare Sources ───────────────────────────────────────────────
+cd ..
 if [[ -d "$REPO_DIR" ]]; then
   echo "✔️  Reusing existing directory '$REPO_DIR'"
 else
