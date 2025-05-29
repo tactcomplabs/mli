@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
     // Use type from function argument in constructing data
     auto arg_type = entryBlock.getArgument(i).getType();
     unsigned width = arg_type.getIntOrFloatBitWidth();
-    if (arg_type.isInteger()) {
+    if (arg_type.isInteger(width)) {
         int64_t int_val = std::stoll(arg);
         printf("Parsing %s into int with width %u\n", arg.c_str(), width);
         arguments.push_back(interpreter.createEvalValue(mlir::IntegerType::get(&context, width), &int_val, width));
