@@ -31,28 +31,6 @@ typedef llvm::APFloatBase::Semantics Semantics;
 
 namespace {
 
-// TODO: Update implementations to use this?
-// Helper function to convert MLIR rounding mode to LLVM rounding mode
-// @Colby let me know if you're on board with something like this.
-//
-// Maybe we move this to Utils?
-static llvm::RoundingMode convertRoundingMode(arith::RoundingMode mode) {
-  switch (mode) {
-  case arith::RoundingMode::upward:
-    return llvm::RoundingMode::TowardPositive;
-  case arith::RoundingMode::downward:
-    return llvm::RoundingMode::TowardNegative;
-  case arith::RoundingMode::toward_zero:
-    return llvm::RoundingMode::TowardZero;
-  case arith::RoundingMode::to_nearest_even:
-    return llvm::RoundingMode::NearestTiesToEven;
-  case arith::RoundingMode::to_nearest_away:
-    return llvm::RoundingMode::NearestTiesToAway;
-  default:
-    return llvm::RoundingMode::NearestTiesToEven;
-  }
-}
-
 // Addition Operations
 struct ArithAddFOpInterpreter
     : public InterpreterOpInterface::ExternalModel<ArithAddFOpInterpreter,
@@ -474,21 +452,24 @@ struct ArithTruncFOpInterpreter
     mli::fmt::printOperand(llvm::outs(), "operand", operand);
 
     // Get rounding mode from optional attribute
-    llvm::RoundingMode roundingMode;
-    if (auto modeAttr =
-            op->getAttrOfType<arith::RoundingModeAttr>("roundingmode")) {
-      roundingMode = convertRoundingMode(modeAttr.getValue());
-      llvm::outs() << mli::fmt::dim("Using specified rounding mode: ")
-                   << mli::fmt::highlight(
-                          std::to_string(static_cast<int>(modeAttr.getValue())))
-                   << "\n";
-    } else {
-      // Default to nearest ties to even if not specified
-      roundingMode = llvm::RoundingMode::NearestTiesToEven;
-      llvm::outs() << mli::fmt::dim(
-                          "Using default rounding mode: NearestTiesToEven")
-                   << "\n";
-    }
+    llvm::RoundingMode roundingMode = llvm::RoundingMode::NearestTiesToEven;
+    // auto attrs = op->getAttrs();
+    // for (auto foo: attrs) {
+    //     llvm::outs() << foo.getValue() << "\n";
+    // }
+    // if (auto modeAttr = op->getAttrOfType<llvm::RoundingMode>("roundingmode")) {
+    //   roundingMode = modeAttr;
+    //   llvm::outs() << mli::fmt::dim("Using specified rounding mode: ")
+    //                << mli::fmt::highlight(
+    //                       std::to_string(static_cast<int>(modeAttr.getValue())))
+    //                << "\n";
+    // } else {
+    //   // Default to nearest ties to even if not specified
+    //   roundingMode = llvm::RoundingMode::NearestTiesToEven;
+    //   llvm::outs() << mli::fmt::dim(
+    //                       "Using default rounding mode: NearestTiesToEven")
+    //                << "\n";
+    // }
 
     bool losesInfo;
     auto resultType = op->getResult(0).getType();
