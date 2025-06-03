@@ -19,6 +19,8 @@
 #
 
 #-- Stage 1: load the necessary modules
+set -eou pipefail
+
 source /etc/qlustar/common/skel/bash/bashrc
 module load ninja/1.11.1-gcc-13.2.0-w72ajol llvm/18.1.3-gcc-13.2.0-vrx5w3g
 export LLVM_DIR=$(dirname $(dirname $(which clang)))
