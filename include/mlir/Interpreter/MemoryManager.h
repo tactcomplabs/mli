@@ -22,6 +22,10 @@
 #include <list>
 #include <vector>
 #include <map>
+#include <cstdint>
+#include <string>
+#include <cstring>
+#include <stdexcept>
 
 namespace mlir{
 
