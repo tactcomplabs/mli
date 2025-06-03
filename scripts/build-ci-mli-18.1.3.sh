@@ -25,7 +25,7 @@ source /etc/qlustar/common/skel/bash/bashrc
 module load ninja/1.11.1-gcc-13.2.0-w72ajol llvm/18.1.3-gcc-13.2.0-vrx5w3g
 export LLVM_DIR=$(dirname $(dirname $(which clang)))
 
-exec >> "rev.jenkins.${SLURM_JOB_ID}.out" 2>&1
+# exec >> "rev.jenkins.${SLURM_JOB_ID}.out" 2>&1
 
 #-- Stage 2: setup the build directories
 mkdir -p build
