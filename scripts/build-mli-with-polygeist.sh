@@ -19,7 +19,7 @@
 #
 
 #-- Stage 1: load the necessary modules
-set -eou pipefail
+set -eo pipefail
 
 source /etc/qlustar/common/skel/bash/bashrc
 module load ninja/1.11.1-gcc-13.2.0-w72ajol
