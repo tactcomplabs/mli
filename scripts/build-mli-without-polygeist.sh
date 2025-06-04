@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# scripts/slurm/build-ci-mli-llvm18.1.3.sh
+# scripts/slurm/build-mli-without-polygeist.sh
 #
 # Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -33,16 +33,16 @@ cd build || exit
 rm -rf *
 
 #-- Stage 3: initiate the build
-           cmake -G Ninja \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_PREFIX_PATH="$LLVM_DIR/lib/cmake" \
-          -DLLVM_DIR="$LLVM_DIR/lib/cmake/llvm" \
-          -DMLIR_DIR="$LLVM_DIR/lib/cmake/mlir" \
-          -DCMAKE_C_COMPILER="$LLVM_DIR/bin/clang" \
-          -DCMAKE_CXX_COMPILER="$LLVM_DIR/bin/clang++" \
-		  -DENABLE_TESTING=ON \
-          ../
-          ninja
+cmake -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_PREFIX_PATH="$LLVM_DIR/lib/cmake" \
+    -DLLVM_DIR="$LLVM_DIR/lib/cmake/llvm" \
+    -DMLIR_DIR="$LLVM_DIR/lib/cmake/mlir" \
+    -DCMAKE_C_COMPILER="$LLVM_DIR/bin/clang" \
+    -DCMAKE_CXX_COMPILER="$LLVM_DIR/bin/clang++" \
+    -DENABLE_TESTING=ON \
+    ../
+ninja
 
 #-- Stage 4: test everything
 ctest
