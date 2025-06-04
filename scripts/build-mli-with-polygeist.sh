@@ -24,7 +24,8 @@ set -eou pipefail
 source /etc/qlustar/common/skel/bash/bashrc
 module load ninja/1.11.1-gcc-13.2.0-w72ajol
 export LLVM_DIR=$HOME/.local/opt/llvm-polygeist
-
+export PATH=$LLVM_DIR/bin:$PATH
+echo "PATH: $PATH"
 if [[ ! -d $LLVM_DIR ]]; then
 	echo "ERROR: LLVM does not exist at $LLVM_DIR"
 	exit 1
@@ -46,6 +47,7 @@ rm -rf *
           -DCMAKE_C_COMPILER="$LLVM_DIR/bin/clang" \
           -DCMAKE_CXX_COMPILER="$LLVM_DIR/bin/clang++" \
 		  -DENABLE_TESTING=ON \
+		  -DENABLE_POLYGEIST=ON \
           ../
           ninja
 
