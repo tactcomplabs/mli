@@ -5,4 +5,5 @@ build
 .markdownlint.json
 .DS_Store
 polygeist
+!test/polygeist
 *.out

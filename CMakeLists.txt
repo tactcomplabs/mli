@@ -55,7 +55,7 @@ include_directories(${MLIR_INCLUDE_DIRS})
 
 # Enable RTTI if needed
 set(LLVM_ENABLE_RTTI ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frtti")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frtti -Wall")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g")
 
 # Add subdirectories
@@ -89,14 +89,19 @@ install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}/MLIConfig.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/MLIConfigVersion.cmake"
     DESTINATION lib/cmake/MLI)
-
-# Detect if Polygeist has been built
-# TODO: Make this less brittle, since the user can specify the directory name
-file(GLOB POLYGEIST_SRC "polygeist")
     
 option(ENABLE_TESTING "Enable Testing" OFF)
+option(ENABLE_POLYGEIST "Enable Polygeist" OFF)
 if(ENABLE_TESTING)
   enable_testing()
   add_subdirectory(test)
   add_executable(memManager test/mem_manager/testMemory.cpp)
+  if (ENABLE_POLYGEIST)
+    find_file(CGEIST cgeist PATHS $ENV{PATH})
+    if (CGEIST)
+        message(STATUS "Polygeist tests enabled, cgeist found at ${CGEIST}")
+    else()
+        message(WARNING "cgeist not found in \$PATH, Polygeist tests disabled")
+    endif()
+  endif()
 endif()
