@@ -15,6 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
+#include "MLIExec.h"
 #include "MLIUtils.h"
 #include "MLIFormat.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
@@ -29,7 +30,12 @@
 #include "llvm/Support/raw_ostream.h"
 
 int main(int argc, char **argv) {
+
   mlir::MLIRContext context;
+
+  // Allow unregistered dialects for now until we adequately support all dialects or 
+  // the ones that persistently show up in the attributes section
+  context.allowUnregisteredDialects();
 
   // Register command-line options
   llvm::cl::opt<std::string> inputFilename(llvm::cl::Positional, llvm::cl::desc("<input mlir file>"), llvm::cl::Required);
