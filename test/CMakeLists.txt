@@ -72,6 +72,8 @@ function(add_mli_test)
                         "${mlir_source_abs_path}")
   endif()
 
+  # --- Ensure mlir-opt executable can be found from imported target ---
+  get_target_property(MLIR_MLIR_OPT_EXECUTABLE mlir-opt LOCATION)
   if(NOT MLIR_MLIR_OPT_EXECUTABLE)
     message(FATAL_ERROR "mlir-opt not found; cannot emit bytecode")
   endif()
