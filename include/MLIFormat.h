@@ -24,6 +24,8 @@
 #include "llvm/ADT/APFloat.h"
 #include "llvm/Support/raw_ostream.h"
 
+extern bool usePrettyPrint;
+
 namespace mli {
 namespace fmt {
 
@@ -45,31 +47,52 @@ inline const char* const RESET     = "\033[0m";
 
 // Utility functions for common formatting patterns
 inline std::string error(const std::string& msg) {
-  return std::string(BOLD) + RED + "error" + RESET + ": " + msg;
+     if (usePrettyPrint) {
+        return std::string(BOLD) + RED + "error" + RESET + ": " + msg;
+    }
+    return "error: " + msg;
 }
 
 inline std::string warning(const std::string& msg) {
-  return std::string(BOLD) + YELLOW + "warning" + RESET + ": " + msg;
+     if (usePrettyPrint) {
+        return std::string(BOLD) + YELLOW + "warning" + RESET + ": " + msg;
+    }
+    return "warning: " + msg;
 }
 
 inline std::string success(const std::string& msg) {
-  return std::string(BOLD) + GREEN + "success" + RESET + ": " + msg;
+    if (usePrettyPrint) {
+        return std::string(BOLD) + GREEN + "success" + RESET + ": " + msg;
+    }
+    return "success: " + msg;
 }
 
 inline std::string info(const std::string& msg) {
-  return std::string(BOLD) + BLUE + "info" + RESET + ": " + msg;
+    if (usePrettyPrint) {
+        return std::string(BOLD) + BLUE + "info" + RESET + ": " + msg;
+    }
+    return "info: " + msg;
 }
 
 inline std::string highlight(const std::string& msg) {
-  return std::string(BOLD) + CYAN + msg + RESET;
+    if (usePrettyPrint) {
+        return std::string(BOLD) + CYAN + msg + RESET;
+    }
+    return msg;
 }
 
 inline std::string dim(const std::string& msg) {
-  return std::string(DIM) + msg + RESET;
+    if (usePrettyPrint) {
+        return std::string(DIM) + msg + RESET;
+    }
+    return msg;
 }
 
 inline std::string type(const std::string& msg) {
-  return std::string(MAGENTA) + msg + RESET;
+    if (usePrettyPrint) {
+        return std::string(MAGENTA) + msg + RESET;
+    }
+    return msg;
 }
 
 // Helper functions for operation output formatting
@@ -80,11 +103,12 @@ inline void printOpName(llvm::raw_ostream &os, const std::string &opName) {
 template<typename T>
 inline void printOperand(llvm::raw_ostream &os, const std::string &name, const T &value, bool isSigned = true) {
   os << dim(name + ": ");
-  if constexpr (std::is_same_v<T, llvm::APInt>) {
+  if constexpr (std::is_same_v<T, llvm::APInt> || std::is_same_v<T, llvm::APSInt>) {
     value.print(os, isSigned);
     os << "\n";
   } else if constexpr (std::is_same_v<T, llvm::APFloat>) {
     value.print(os);
+    os << "\n";
   } else {
     os << highlight(std::to_string(value)) << "\n";
   }
@@ -98,6 +122,7 @@ inline void printResult(llvm::raw_ostream &os, const T &value, bool isSigned = t
     os << "\n";
   } else if constexpr (std::is_same_v<T, llvm::APFloat>) {
     value.print(os);
+    os << "\n";
   } else {
     os << highlight(std::to_string(value)) << "\n";
   }
