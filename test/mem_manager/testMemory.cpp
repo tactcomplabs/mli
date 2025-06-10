@@ -1,4 +1,5 @@
 #include <cassert>
+#include <iostream>
 #include "mlir/Interpreter/MemoryManager.h"
 
 #define NUM_BLOCKS 3
@@ -80,5 +81,6 @@ int main() {
     assert(testAlloc(mem4, blockSizes[1], false) == 0 && "MemManager can't reclaim freed block");
     assert(testAlloc(mem4, memSize, false) == 0 && "MemManager can't consolidate block with both neighbors");
 
+    std::cout << "SUCCESS" << std::endl;
     return 0;
 }

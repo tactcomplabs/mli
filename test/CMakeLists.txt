@@ -9,8 +9,8 @@ function(add_mli_test)
                         ${ARGN})
 
   # Use the prefixed lowercase variables
-  if(NOT test_name_base OR NOT test_subdir OR NOT test_mli_args OR NOT test_regex)
-    message(FATAL_ERROR "add_mli_test requires name_base, subdir, mli_args, "
+  if(NOT test_name_base OR NOT test_subdir OR NOT test_regex)
+    message(FATAL_ERROR "add_mli_test requires name_base, subdir, "
                         "and regex arguments.")
   endif()
 
@@ -20,8 +20,9 @@ function(add_mli_test)
   endif()
 
   if(test_function_name)
-    set(mlir_test_name ${test_name_base}_${test_function_name})
-    set(bc_test_name ${test_name_base}_${test_function_name}_BYTECODE)
+    string(TOUPPER ${test_function_name} function_upper)
+    set(mlir_test_name ${test_name_base}_${function_upper})
+    set(bc_test_name ${test_name_base}_${function_upper}_BYTECODE)
   else()
     set(mlir_test_name ${test_name_base})
     set(bc_test_name ${test_name_base}_BYTECODE)
@@ -37,6 +38,7 @@ function(add_mli_test)
     set(prefix_to_remove "${dir_prefix}_") # Creates "arith_", "llvm_ir_", etc.
 
     string(REPLACE "${prefix_to_remove}" "" test_filename_base_lower ${test_filename_base_lower})
+    string(REPLACE "." "_" test_filename_base_lower ${test_filename_base_lower})
 
     set(test_filename_base "test_${test_filename_base_lower}")
   endif()
@@ -48,9 +50,6 @@ function(add_mli_test)
   # Relative to CMAKE_CURRENT_BINARY_DIR
   set(bc_file_rel_path ${test_subdir}/${test_filename_base}.bc)
 
-  set(mlir_test_name ${test_name_base})
-  set(bc_test_name ${test_name_base}_BYTECODE)
-
   # Create a unique prefix for the target name based on the calling directory (Hopefully this won't break)
   file(RELATIVE_PATH rel_path_from_root ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
   string(REPLACE "/" "_" sanitized_path_prefix ${rel_path_from_root})
@@ -59,12 +58,12 @@ function(add_mli_test)
   # resulting in an empty or "." relative path.
   if(NOT sanitized_path_prefix OR sanitized_path_prefix STREQUAL ".")
     if(sanitized_path_prefix STREQUAL ".")
-      # This wi
+      # Request that the operation's test be moved to its constituent dialect subdirectory 
       set(sanitized_path_prefix "move_this_test_to_its_own_dialect_directory_like_llvm_ir_or_arith")
     endif()
   endif()
 
-  set(gen_target_name Generate_${sanitized_path_prefix}_${test_filename_base}_BC)
+  set(gen_target_name Generate_${sanitized_path_prefix}_${test_filename_base}_${test_function_name}_BC)
 
   # --- Ensure source file exists ---
   if(NOT EXISTS ${mlir_source_abs_path})
@@ -100,11 +99,15 @@ function(add_mli_test)
     set(mli_function_arg "--func=${test_function_name}")
   endif()
 
+  # Disable pretty printing for tests
+  # This removes invisible characters that can interfere with regex pattern matching
+  set(mli_formatting_args "--pretty-print=false")
+
   # --- Add the .mlir test ---
   add_test(
     NAME ${mlir_test_name}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${test_subdir}
-    COMMAND $<TARGET_FILE:mli> ${test_filename_base}.mlir ${mli_function_arg} ${test_mli_args}
+    COMMAND $<TARGET_FILE:mli> ${test_filename_base}.mlir ${mli_function_arg} ${test_mli_args} ${mli_formatting_args}
   )
   set_tests_properties(${mlir_test_name} PROPERTIES
     TIMEOUT 60
@@ -116,7 +119,7 @@ function(add_mli_test)
   add_test(
     NAME ${bc_test_name}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test_subdir}
-    COMMAND $<TARGET_FILE:mli> ${test_filename_base}.bc ${mli_function_arg} ${test_mli_args}
+    COMMAND $<TARGET_FILE:mli> ${test_filename_base}.bc ${mli_function_arg} ${test_mli_args} ${mli_formatting_args}
   )
   set_tests_properties(${bc_test_name} PROPERTIES
     TIMEOUT 60
@@ -129,7 +132,7 @@ if(ENABLE_TESTING)
   add_subdirectory(llvm_ir)
   add_subdirectory(arith)
   #add_subdirectory(scf)
-  #add_subdirectory(mem_manager)
+  add_subdirectory(mem_manager)
   if(ENABLE_POLYGEIST)
     add_subdirectory(polygeist)
   endif()
