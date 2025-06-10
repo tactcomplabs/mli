@@ -24,10 +24,10 @@
 #include "llvm/ADT/APFloat.h"
 #include "llvm/Support/raw_ostream.h"
 
-extern bool usePrettyPrint;
-
 namespace mli {
 namespace fmt {
+
+inline bool usePrettyPrint = true;
 
 // ANSI escape codes for colors
 inline const char* const RED     = "\033[31m";
@@ -47,14 +47,14 @@ inline const char* const RESET     = "\033[0m";
 
 // Utility functions for common formatting patterns
 inline std::string error(const std::string& msg) {
-     if (usePrettyPrint) {
+    if (usePrettyPrint) {
         return std::string(BOLD) + RED + "error" + RESET + ": " + msg;
     }
     return "error: " + msg;
 }
 
 inline std::string warning(const std::string& msg) {
-     if (usePrettyPrint) {
+    if (usePrettyPrint) {
         return std::string(BOLD) + YELLOW + "warning" + RESET + ": " + msg;
     }
     return "warning: " + msg;
