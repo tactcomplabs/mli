@@ -16,7 +16,7 @@ static mlir::EvalValue convertArgToEvalValue(
   
   unsigned width = argType.getIntOrFloatBitWidth();
   
-  if (argType.isInteger()) {
+  if (argType.isInteger(width)) {
     int64_t int_val = std::stoll(argStr);
     llvm::outs() << mli::fmt::dim("Parsing ")
                 << mli::fmt::highlight(argStr) << mli::fmt::dim(" as ")
