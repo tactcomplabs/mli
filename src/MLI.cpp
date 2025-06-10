@@ -41,8 +41,7 @@ int main(int argc, char **argv) {
   llvm::cl::opt<std::string> funcName("func", llvm::cl::desc("Specify function entry point"), llvm::cl::value_desc("function"), llvm::cl::init("main"));
   llvm::cl::list<std::string> args("args", llvm::cl::desc("List of numeric arguments"), llvm::cl::CommaSeparated);
   
-  bool usePrettyPrint = true;
-  static llvm::cl::opt<bool, true> printFlag("pretty-print", llvm::cl::desc("Enable ANSI pretty output"), llvm::cl::location(usePrettyPrint), llvm::cl::init(true));
+  static llvm::cl::opt<bool, true> printFlag("pretty-print", llvm::cl::desc("Enable ANSI pretty output"), llvm::cl::location(mli::fmt::usePrettyPrint), llvm::cl::init(true));
 
   llvm::cl::ParseCommandLineOptions(argc, argv, "MLIR Interpreter Driver\n");
 
