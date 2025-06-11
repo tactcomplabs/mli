@@ -76,7 +76,6 @@ get_target_property(LLVM_CONFIG llvm-config LOCATION)
 execute_process(COMMAND ${LLVM_CONFIG} --version OUTPUT_VARIABLE VERSION_OUTPUT)
 string(REGEX MATCH "[0-9]+\.[0-9]\.[0-9]" LLVM_VERSION ${VERSION_OUTPUT})
 string (COMPARE GREATER ${LLVM_VERSION} "18.1.6" NEW_LLVM)
-message("NEW LLVM?: ${NEW_LLVM}")
 # TableGen for InterpreterOpInterface
 set(LLVM_TARGET_DEFINITIONS ${CMAKE_SOURCE_DIR}/include/mlir/Interpreter/InterpreterOpInterface.td)
 
