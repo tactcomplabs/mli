@@ -31,6 +31,7 @@ typedef llvm::APFloatBase::Semantics Semantics;
 
 namespace {
 
+#if NEW_LLVM
 static llvm::RoundingMode convertRoundingMode(arith::RoundingMode mode) {
   switch (mode) {
   case arith::RoundingMode::upward:
@@ -47,6 +48,7 @@ static llvm::RoundingMode convertRoundingMode(arith::RoundingMode mode) {
     return llvm::RoundingMode::NearestTiesToEven;
   }
 }
+#endif
 
 // Addition Operations
 struct ArithAddFOpInterpreter
@@ -470,13 +472,14 @@ struct ArithTruncFOpInterpreter
 
     // Get rounding mode from optional attribute
     llvm::RoundingMode roundingMode = llvm::RoundingMode::NearestTiesToEven;
+    #if NEW_LLVM
     if (auto modeAttr =
         op->getAttrOfType<arith::RoundingModeAttr>("roundingmode")) {
         roundingMode = convertRoundingMode(modeAttr.getValue());
         llvm::outs() << mli::fmt::dim("Using specified rounding mode: ") << roundingMode << "\n";
-    } else {
-        llvm::outs() << mli::fmt::dim("Using default rounding mode: NearestTiesToEven") << "\n";
-    }
+    } 
+    #endif
+    llvm::outs() << mli::fmt::dim("Using default rounding mode: NearestTiesToEven") << "\n";
 
     bool losesInfo;
     auto resultType = op->getResult(0).getType();
