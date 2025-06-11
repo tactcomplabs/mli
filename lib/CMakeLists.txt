@@ -70,6 +70,12 @@ target_link_libraries(MLIRInterpreterLib
   ${LLVM_LIBS}
 )
 
+# Determine if we are using a legacy version of LLVM
+# Polygeist requires LLVM 18.0.0, which is missing some functionality we use from newer versions
+get_target_property(LLVM_CONFIG llvm-config LOCATION)
+execute_process(COMMAND ${LLVM_CONFIG} --version OUTPUT_VARIABLE VERSION_OUTPUT)
+string(REGEX MATCH "[0-9]+\.[0-9]\.[0-9]" LLVM_VERSION ${VERSION_OUTPUT})
+string (COMPARE GREATER ${LLVM_VERSION} "18.1.6" NEW_LLVM)
 # TableGen for InterpreterOpInterface
 set(LLVM_TARGET_DEFINITIONS ${CMAKE_SOURCE_DIR}/include/mlir/Interpreter/InterpreterOpInterface.td)
 
