@@ -31,11 +31,6 @@ typedef llvm::APFloatBase::Semantics Semantics;
 
 namespace {
 
-// TODO: Update implementations to use this?
-// Helper function to convert MLIR rounding mode to LLVM rounding mode
-// @Colby let me know if you're on board with something like this.
-//
-// Maybe we move this to Utils?
 static llvm::RoundingMode convertRoundingMode(arith::RoundingMode mode) {
   switch (mode) {
   case arith::RoundingMode::upward:
@@ -474,20 +469,13 @@ struct ArithTruncFOpInterpreter
     mli::fmt::printOperand(llvm::outs(), "operand", operand);
 
     // Get rounding mode from optional attribute
-    llvm::RoundingMode roundingMode;
+    llvm::RoundingMode roundingMode = llvm::RoundingMode::NearestTiesToEven;
     if (auto modeAttr =
-            op->getAttrOfType<arith::RoundingModeAttr>("roundingmode")) {
-      roundingMode = convertRoundingMode(modeAttr.getValue());
-      llvm::outs() << mli::fmt::dim("Using specified rounding mode: ")
-                   << mli::fmt::highlight(
-                          std::to_string(static_cast<int>(modeAttr.getValue())))
-                   << "\n";
+        op->getAttrOfType<arith::RoundingModeAttr>("roundingmode")) {
+        roundingMode = convertRoundingMode(modeAttr.getValue());
+        llvm::outs() << mli::fmt::dim("Using specified rounding mode: ") << roundingMode << "\n";
     } else {
-      // Default to nearest ties to even if not specified
-      roundingMode = llvm::RoundingMode::NearestTiesToEven;
-      llvm::outs() << mli::fmt::dim(
-                          "Using default rounding mode: NearestTiesToEven")
-                   << "\n";
+        llvm::outs() << mli::fmt::dim("Using default rounding mode: NearestTiesToEven") << "\n";
     }
 
     bool losesInfo;

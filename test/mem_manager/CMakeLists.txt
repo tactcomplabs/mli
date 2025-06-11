@@ -1,3 +1,3 @@
 if (ENABLE_TESTING)
-  add_test(NAME MEM_MANAGER COMMAND memManager)
+  add_test(NAME MEM_MANAGER COMMAND memManager PASS_REGULAR_EXPRESSION "SUCCESS")
 endif()

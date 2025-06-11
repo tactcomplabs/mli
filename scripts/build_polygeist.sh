@@ -1,53 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source /etc/qlustar/common/skel/bash/bashrc
+module load ninja/1.11.1-gcc-13.2.0-w72ajol
+
 #─── Defaults and CLI parsing ────────────────────────────────────────────────
-PREFIX="/opt/llvm-polygeist"
+PREFIX="$HOME/.local/opt/llvm-polygeist"
 BRANCH="main"
 REPO_DIR="polygeist"
-
-usage() {
-  cat <<EOF
-Usage: $0 [--prefix DIR] [--branch NAME] [--repo-dir DIR]
-Clones and builds LLVM+Clang+MLIR+Polygeist into \$PREFIX.
-
-Options:
-  --prefix DIR     Install prefix (default: $PREFIX)
-  --branch NAME    Polygeist Git branch (default: $BRANCH)
-  --repo-dir DIR   Clone directory (default: $REPO_DIR)
-EOF
-  exit 1
-}
-
-while [[ $# -gt 0 ]]; do
-  case $1 in
-  --prefix)
-    PREFIX="$2"
-    shift 2
-    ;;
-  --branch)
-    BRANCH="$2"
-    shift 2
-    ;;
-  --repo-dir)
-    REPO_DIR="$2"
-    shift 2
-    ;;
-  -h | --help) usage ;;
-  *)
-    echo "Unknown option: $1"
-    usage
-    ;;
-  esac
-done
-
-#─── Dependency Check ────────────────────────────────────────────────────────
-for cmd in git cmake ninja; do
-  if ! command -v "$cmd" &>/dev/null; then
-    echo "Error: '$cmd' is required but not installed." >&2
-    exit 2
-  fi
-done
 
 #─── Clone and Prepare Sources ───────────────────────────────────────────────
 cd ..
@@ -55,7 +15,7 @@ if [[ -d "$REPO_DIR" ]]; then
   echo "✔️  Reusing existing directory '$REPO_DIR'"
 else
   echo "⏳ Cloning Polygeist into '$REPO_DIR'..."
-  git clone --depth 1 --branch "$BRANCH" https://github.com/llvm/Polygeist.git "$REPO_DIR"
+  git clone --depth 1 --shallow-submodules --branch "$BRANCH" https://github.com/llvm/Polygeist.git "$REPO_DIR"
 fi
 cd "$REPO_DIR"
 

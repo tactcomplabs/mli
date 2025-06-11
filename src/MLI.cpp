@@ -15,6 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
+#include "MLIExec.h"
 #include "MLIUtils.h"
 #include "MLIFormat.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
@@ -26,15 +27,21 @@
 #include "mlir/Interpreter/Interpreter.h"
 #include "mlir/IR/Builders.h"
 #include "llvm/Support/CommandLine.h"
-#include "llvm/Support/raw_ostream.h"
 
 int main(int argc, char **argv) {
+
   mlir::MLIRContext context;
+
+  // Allow unregistered dialects for now until we adequately support all dialects or 
+  // the ones that persistently show up in the attributes section
+  context.allowUnregisteredDialects();
 
   // Register command-line options
   llvm::cl::opt<std::string> inputFilename(llvm::cl::Positional, llvm::cl::desc("<input mlir file>"), llvm::cl::Required);
   llvm::cl::opt<std::string> funcName("func", llvm::cl::desc("Specify function entry point"), llvm::cl::value_desc("function"), llvm::cl::init("main"));
   llvm::cl::list<std::string> args("args", llvm::cl::desc("List of numeric arguments"), llvm::cl::CommaSeparated);
+  
+  static llvm::cl::opt<bool, true> printFlag("pretty-print", llvm::cl::desc("Enable ANSI pretty output"), llvm::cl::location(mli::fmt::usePrettyPrint), llvm::cl::init(true));
 
   llvm::cl::ParseCommandLineOptions(argc, argv, "MLIR Interpreter Driver\n");
 
@@ -96,7 +103,7 @@ int main(int argc, char **argv) {
     // Use type from function argument in constructing data
     auto arg_type = entryBlock.getArgument(i).getType();
     unsigned width = arg_type.getIntOrFloatBitWidth();
-    if (arg_type.isInteger()) {
+    if (arg_type.isInteger(width)) {
         int64_t int_val = std::stoll(arg);
         printf("Parsing %s into int with width %u\n", arg.c_str(), width);
         arguments.push_back(interpreter.createEvalValue(mlir::IntegerType::get(&context, width), &int_val, width));

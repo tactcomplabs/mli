@@ -647,20 +647,23 @@ struct LLVMBitcastOpInterpreter
     if (src_type == result_type) { // no-op
         evalResult = operands[0];
     }
-    else if (!src_type.isInteger() && src_type.isIntOrFloat()) { // src float, ret int
+    else if (llvm::isa<mlir::FloatType>(src_type)) { // src float, ret int
         APFloat lhs = getFloatData(operands[0]);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
         APInt result = lhs.bitcastToAPInt();
         mli::fmt::printResult(llvm::outs(), result);
         evalResult = interpreter.createEvalValue(result_type, &result, sizeof(result));
     }
-    else { // src int, ret float
+    else if (llvm::isa<mlir::IntegerType>(src_type)) { // src int, ret float
         APInt lhs = getIntegerData(operands[0]);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
         Semantics s = getFloatSemantics(result_type);
         APFloat result = APFloat(llvm::APFloat::EnumToSemantics(s), lhs);
         mli::fmt::printResult(llvm::outs(), result);
-                evalResult = interpreter.createEvalValue(result_type, &result, sizeof(result));
+        evalResult = interpreter.createEvalValue(result_type, &result, sizeof(result));
+    }
+    else {
+        llvm::errs() << mli::fmt::warning("Either src or dest is not a numeric type\n");
     }
     return interpreter.createBindValueResult(evalResult);
   }
@@ -1357,7 +1360,7 @@ struct LLVMConstantOpInterpreter
         evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
     }
     else {
-        llvm::errs() << "Found constant that is neither integer nor float\n";
+        llvm::errs() << mli::fmt::warning("Found constant that is neither integer nor float\n");
     }
     // Create an EvalValue from the result
     // Wrap the EvalValue in an ArrayRef and return the EvalResult
