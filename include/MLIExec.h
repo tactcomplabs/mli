@@ -1,4 +1,5 @@
 #include "MLIFormat.h"
+#include "MLIUtils.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/Interpreter/Dialects/FuncInterpreter.h"
@@ -17,28 +18,19 @@ static mlir::EvalValue convertArgToEvalValue(
   unsigned width = argType.getIntOrFloatBitWidth();
   
   if (argType.isInteger(width)) {
-    int64_t int_val = std::stoll(argStr);
+    APInt int_val = APInt(width, argStr, 10);
     llvm::outs() << mli::fmt::dim("Parsing ")
                 << mli::fmt::highlight(argStr) << mli::fmt::dim(" as ")
                 << mli::fmt::type("i" + std::to_string(width)) << "\n";
-    return interpreter.createEvalValue(
-        mlir::IntegerType::get(&context, width), &int_val, sizeof(int_val));
+    return interpreter.createEvalValue(argType, &int_val, sizeof(int_val));
   } 
-  else if (argType.isF32()) {
-    float float_val = std::stof(argStr);
+  else if (mlir::isa<mlir::FloatType>(argType)) {
+    Semantics s = mli::getFloatSemantics(argType);
+    APFloat float_val = APFloat(APFloatBase::EnumToSemantics(s), argStr);
     llvm::outs() << mli::fmt::dim("Parsing ")
                 << mli::fmt::highlight(argStr) << mli::fmt::dim(" as ")
-                << mli::fmt::type("f32") << "\n";
-    return interpreter.createEvalValue(
-        mlir::Float32Type::get(&context), &float_val, sizeof(float_val));
-  } 
-  else if (argType.isF64()) {
-    double float_val = std::stod(argStr);
-    llvm::outs() << mli::fmt::dim("Parsing ")
-                << mli::fmt::highlight(argStr) << mli::fmt::dim(" as ")
-                << mli::fmt::type("f64") << "\n";
-    return interpreter.createEvalValue(
-        mlir::Float64Type::get(&context), &float_val, sizeof(float_val));
+                << mli::fmt::type("f" + std::to_string(width)) << "\n";
+    return interpreter.createEvalValue(argType, &float_val, sizeof(float_val));
   }
   
   throw std::runtime_error("Unsupported argument type");
@@ -84,37 +76,18 @@ static std::string formatReturnValue(const mlir::EvalValue& value) {
   
   // Handle integer types
   if (valType.isIntOrIndex()) {
-    if (valType.getIntOrFloatBitWidth() <= 32) {
-      auto data = value.getData<int32_t>();
-      if (!data.empty()) {
-        valueOs << data[0];
-      }
-    } else {
-      auto data = value.getData<int64_t>();
+      auto data = value.getData<APInt>();
       if (!data.empty()) {
         valueOs << data[0];
       }
     }
-  }
   // Handle float types
-  else if (valType.isF32()) {
-    auto data = value.getData<float>();
+  else if (mlir::isa<mlir::FloatType>(valType)) {
+    auto data = value.getData<APFloat>();
     if (!data.empty()) {
-      // Format float with fixed precision
-      char buffer[32];
-      snprintf(buffer, sizeof(buffer), "%.6f", data[0]);
-      valueOs << buffer;
+      data[0].print(valueOs);
     }
   } 
-  else if (valType.isF64()) {
-    auto data = value.getData<double>();
-    if (!data.empty()) {
-      // Format double with fixed precision
-      char buffer[32];
-      snprintf(buffer, sizeof(buffer), "%.6f", data[0]);
-      valueOs << buffer;
-    }
-  }
   // Handle pointer types
   else if (mlir::isa<mlir::LLVM::LLVMPointerType>(valType)) {
     auto data = value.getData<uint64_t>();
@@ -149,8 +122,6 @@ static void processExecutionResult(const mlir::EvalResult& result) {
       // Get the type
       std::string typeStr;
       llvm::raw_string_ostream typeOs(typeStr);
-      returnVals.back().getType().print(typeOs);
-      typeOs.flush();
       
       // Format the value
       std::string valueStr = formatReturnValue(returnVals.back());

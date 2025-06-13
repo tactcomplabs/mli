@@ -19,13 +19,44 @@
 #ifndef MLI_FORMAT_H
 #define MLI_FORMAT_H
 
+#include <iostream>
 #include <string>
+#include <utility>
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/Support/raw_ostream.h"
 
 namespace mli {
 namespace fmt {
+
+// "Specialize" std::to_string for common types that don't natively support it
+template <typename T>
+inline std::string to_string(T& val, bool isSigned = true) {
+    std::string output;
+    using stripped_type = std::remove_cv_t<T>;
+    if constexpr(std::is_same_v<stripped_type, llvm::APInt>) {
+        llvm::raw_string_ostream os(output);
+        // The shovel operator for APInt automatically assumes the integer is signed
+        // Use print instead to account for potential unsignedness
+        val.print(os, isSigned);
+        return os.str();
+    }
+    else if constexpr(std::is_same_v<stripped_type, llvm::APSInt> || std::is_same_v<stripped_type, llvm::APFloat>) {
+        llvm::raw_string_ostream os(output);
+        os << val;
+        return os.str();
+    }
+    else {
+        return std::to_string(val);
+    }
+}
+
+// Specialization for std::pair
+// We could add this to the above, but that would require more trickery for the type comparison
+template <typename T1, typename T2>
+inline std::string to_string(const std::pair<T1, T2>& p, bool isSigned = true) {
+    return "(" + to_string(p.first, isSigned) + ", " + to_string(p.second, isSigned) + ")";
+}
 
 inline bool usePrettyPrint = true;
 
@@ -102,30 +133,12 @@ inline void printOpName(llvm::raw_ostream &os, const std::string &opName) {
 
 template<typename T>
 inline void printOperand(llvm::raw_ostream &os, const std::string &name, const T &value, bool isSigned = true) {
-  os << dim(name + ": ");
-  if constexpr (std::is_same_v<T, llvm::APInt> || std::is_same_v<T, llvm::APSInt>) {
-    value.print(os, isSigned);
-    os << "\n";
-  } else if constexpr (std::is_same_v<T, llvm::APFloat>) {
-    value.print(os);
-    os << "\n";
-  } else {
-    os << highlight(std::to_string(value)) << "\n";
-  }
+  os << dim(name + ": ") << to_string(value, isSigned) << "\n";
 }
 
 template<typename T>
-inline void printResult(llvm::raw_ostream &os, const T &value, bool isSigned = true) {
-  os << dim("result: ");
-  if constexpr (std::is_same_v<T, llvm::APInt> || std::is_same_v<T, llvm::APSInt>) {
-    value.print(os, isSigned);
-    os << "\n";
-  } else if constexpr (std::is_same_v<T, llvm::APFloat>) {
-    value.print(os);
-    os << "\n";
-  } else {
-    os << highlight(std::to_string(value)) << "\n";
-  }
+inline void printResult(llvm::raw_ostream &os, const T &result, bool isSigned = true) {
+  os << dim("result: ") << to_string(result, isSigned) << "\n";
 }
 
 } // namespace fmt

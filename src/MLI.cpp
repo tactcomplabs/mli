@@ -40,7 +40,6 @@ int main(int argc, char **argv) {
   llvm::cl::opt<std::string> inputFilename(llvm::cl::Positional, llvm::cl::desc("<input mlir file>"), llvm::cl::Required);
   llvm::cl::opt<std::string> funcName("func", llvm::cl::desc("Specify function entry point"), llvm::cl::value_desc("function"), llvm::cl::init("main"));
   llvm::cl::list<std::string> args("args", llvm::cl::desc("List of numeric arguments"), llvm::cl::CommaSeparated);
-  
   static llvm::cl::opt<bool, true> printFlag("pretty-print", llvm::cl::desc("Enable ANSI pretty output"), llvm::cl::location(mli::fmt::usePrettyPrint), llvm::cl::init(true));
 
   llvm::cl::ParseCommandLineOptions(argc, argv, "MLIR Interpreter Driver\n");
@@ -60,10 +59,8 @@ int main(int argc, char **argv) {
   // Parse the MLIR file 
   auto module = mli::parseMLIRFile(inputFilename, context);
   if (!module) {
-    llvm::errs() << mli::fmt::error("Failed to parse MLIR file: " + inputFilename) << "\n";
     return 1;
   }
-  llvm::outs() << mli::fmt::success("Successfully parsed MLIR file: " + inputFilename) << "\n";
   
   // Set the module in the interpreter
   interpreter.setModule(*module);
@@ -83,109 +80,85 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  // Set up the function frame
-  mlir::ScopedFunctionFrame functionFrameGuard(interpreter);
+  return executeFunction(interpreter, func, args, context);
 
-  // Set up the region frame (important for handling block arguments and operation execution)
-  auto &entryBlock = func.getBody().front();
-  mlir::ScopedRegionFrame regionFrameGuard(interpreter);
+//   // Set up the function frame
+//   mlir::ScopedFunctionFrame functionFrameGuard(interpreter);
 
-  // Ensure the number of arguments matches the function signature
-  if (entryBlock.getNumArguments() != args.size()) {
-    llvm::errs() << "Mismatch between number of provided arguments and function signature.\n";
-    return 1;
-  }
+//   // Set up the region frame (important for handling block arguments and operation execution)
+//   auto &entryBlock = func.getBody().front();
+//   mlir::ScopedRegionFrame regionFrameGuard(interpreter);
 
-  // Prepare arguments with correct sizes and types
-  mlir::SmallVector<mlir::EvalValue, 4> arguments;
-  int i = 0;
-  for (auto &arg : args) {
-    // Use type from function argument in constructing data
-    auto arg_type = entryBlock.getArgument(i).getType();
-    unsigned width = arg_type.getIntOrFloatBitWidth();
-    if (arg_type.isInteger(width)) {
-        int64_t int_val = std::stoll(arg);
-        printf("Parsing %s into int with width %u\n", arg.c_str(), width);
-        arguments.push_back(interpreter.createEvalValue(mlir::IntegerType::get(&context, width), &int_val, width));
-    }
-    else if (arg_type.isF32()) {
-        float float_val = std::stof(arg);
-        printf("Parsing %s into float %f with width %u\n", arg.c_str(), float_val, width);
-        arguments.push_back(interpreter.createEvalValue(mlir::Float32Type::get(&context), &float_val, width));
-    }
-    else if (arg_type.isF64()) {
-        double float_val = std::stod(arg);
-        printf("Parsing %s into float %f with width %u\n", arg.c_str(), float_val, width);
-        arguments.push_back(interpreter.createEvalValue(mlir::Float64Type::get(&context), &float_val, width));
-    }
-    else {
-        llvm::errs() << "Unrecognized type, not int or floating point" << "\n";
-    }
-    i++;
-  }
+//   // Ensure the number of arguments matches the function signature
+//   if (entryBlock.getNumArguments() != args.size()) {
+//     llvm::errs() << mli::fmt::error("Mismatch between number of provided arguments and function signature.") << "\n";
+//     return 1;
+//   }
 
-  // Initialize and map block arguments to EvalValues
-  for (unsigned i = 0; i < entryBlock.getNumArguments(); ++i) {
-    mlir::Value blockArg = entryBlock.getArgument(i);
-    interpreter.setEvalValue(blockArg, arguments[i]);
-  }
+//   // Initialize and map block arguments to EvalValues
+//   for (unsigned i = 0; i < entryBlock.getNumArguments(); ++i) {
+//     mlir::Value blockArg = entryBlock.getArgument(i);
+//     mlir::EvalValue argVal = convertArgToEvalValue(args[i], blockArg.getType(), interpreter, context);
+//     interpreter.setEvalValue(blockArg, argVal);
+//   }
 
-  mlir::EvalValue lastReturnValue;
-  for (auto &op : entryBlock) {
-    llvm::SmallVector<mlir::EvalValue, 4> opOperands;
-    for (auto operand : op.getOperands()) {
-      llvm::outs() << "operand: " << operand << "\n";
-      if (auto evalValue = interpreter.getEvalValue(operand)) {
-        opOperands.push_back(evalValue);
-      } else {
-        llvm::errs() << "Operand not found in interpreter context.\n";
-        return 1;
-      }
-    }
+//   bool isVoidReturn = false;
+//   for (auto &op : entryBlock) {
+//     llvm::SmallVector<mlir::EvalValue, 4> opOperands;
+//     for (auto operand : op.getOperands()) {
+//       if (auto evalValue = interpreter.getEvalValue(operand)) {
+//         opOperands.push_back(evalValue);
+//       } else {
+//         llvm::errs() << mli::fmt::error("Operand not found in interpreter context") << "\n";
+//         return 1;
+//       }
+//     }
 
-    mlir::EvalResult result = interpreter.execute(op, opOperands);
+//     mlir::EvalResult result = interpreter.execute(op, opOperands);
 
-    if (result.getKind() == mlir::EvalResultKind::Error) {
-      llvm::errs() << "Error occurred during execution of operation: " << op << "\n";
-      llvm::errs() << "Error message: " << result.getError().getMessage() << "\n";
-      return 1;
-    }
+//     if (result.getKind() == mlir::EvalResultKind::Error) {
+//       llvm::errs() << mli::fmt::error("Error occurred during execution of operation") << op << "\n";
+//       llvm::errs() << "Error message: " << result.getError().getMessage() << "\n";
+//       return 1;
+//     }
 
-    // Handle return values from any dialect
-    if (result.getKind() == mlir::EvalResultKind::ReturnValue) {
-      llvm::outs() << mli::fmt::info("Return operation detected: " + op.getName().getStringRef().str()) << "\n";
-      auto returnVals = result.getValues();
-      if (!returnVals.empty()) {
-        lastReturnValue = returnVals.back();
-        // Print the return value type
-        std::string typeStr;
-        llvm::raw_string_ostream typeOs(typeStr);
-        lastReturnValue.getType().print(typeOs);
-        llvm::outs() << mli::fmt::dim("Return type: ") << mli::fmt::type(typeStr) << "\n";
-      } else {
-        llvm::outs() << mli::fmt::dim("Void return detected") << "\n";
-      }
-      break;
-    }
+//     // Handle return values from any dialect
+//     if (result.getKind() == mlir::EvalResultKind::ReturnValue) {
+//       llvm::outs() << mli::fmt::info("Return operation detected: " + op.getName().getStringRef().str()) << "\n";
+//       auto returnVals = result.getValues();
+//       isVoidReturn = returnVals.empty();
+//       if (isVoidReturn) {
+//         llvm::outs() << mli::fmt::dim("Void return detected") << "\n";
+//         break;
+//       }
+//       // Print the return value type
+//       std::string typeStr;
+//       llvm::raw_string_ostream typeOs(typeStr);
+//       for (auto it = returnVals.begin(); it != returnVals.end(); it++) {
+//         if (it != returnVals.begin()) typeOs << ", ";
+//         it->getType().print(typeOs);
+//       }
+//       llvm::outs() << mli::fmt::dim("Return type: ") << mli::fmt::type(typeStr) << "\n";
+//     }
 
-    // For non-return operations, bind results to the interpreter context
-    for (unsigned i = 0; i < op.getNumResults(); ++i) {
-      auto resultValue = op.getResult(i);
-      if (i < result.getValues().size()) {
-        interpreter.setEvalValue(resultValue, result.getValues()[i]);
-      } else {
-        llvm::errs() << "Mismatch between operation results and EvalResult values.\n";
-        return 1;
-      }
-    }
-  }
+//     // For non-return operations, bind results to the interpreter context
+//     for (unsigned i = 0; i < op.getNumResults(); ++i) {
+//       auto resultValue = op.getResult(i);
+//       if (i < result.getValues().size()) {
+//         interpreter.setEvalValue(resultValue, result.getValues()[i]);
+//       } else {
+//         llvm::errs() << "Mismatch between operation results and EvalResult values.\n";
+//         return 1;
+//       }
+//     }
+//   }
 
-  // Print final return status
-  if (lastReturnValue) {
-    llvm::outs() << mli::fmt::success("Function execution completed with return value") << "\n";
-  } else {
-    llvm::outs() << mli::fmt::info("Function execution completed (void return)") << "\n";
-  }
+//   // Print final return status
+//   if (isVoidReturn) {
+//     llvm::outs() << mli::fmt::success("Function execution completed (void return)") << "\n";
+//   } else {
+//     llvm::outs() << mli::fmt::success("Function execution completed with return value") << "\n";
+//   }
 
   return 0;
 }
