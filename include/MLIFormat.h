@@ -34,16 +34,16 @@ template <typename T>
 inline std::string to_string(T& val, bool isSigned = true) {
     std::string output;
     using stripped_type = std::remove_cv_t<T>;
-    if constexpr(std::is_same_v<stripped_type, llvm::APInt>) {
+    if constexpr(std::is_same_v<stripped_type, llvm::APInt> || std::is_same_v<stripped_type, llvm::APSInt>) {
         llvm::raw_string_ostream os(output);
         // The shovel operator for APInt automatically assumes the integer is signed
         // Use print instead to account for potential unsignedness
         val.print(os, isSigned);
         return os.str();
     }
-    else if constexpr(std::is_same_v<stripped_type, llvm::APSInt> || std::is_same_v<stripped_type, llvm::APFloat>) {
+    else if constexpr(std::is_same_v<stripped_type, llvm::APFloat>) {
         llvm::raw_string_ostream os(output);
-        os << val;
+        val.print(os);
         return os.str();
     }
     else {
