@@ -31,7 +31,7 @@ function(add_mli_test)
   # --- Determine file paths ---
   if(NOT test_filename_base)
     # Convert the test base name to lowercase for consistent processing.
-    string(TOLOWER ${test_name_base} test_filename_base_lower)
+    string(TOLOWER ${test_subdir} test_filename_base_lower)
 
     get_filename_component(current_dir_name ${CMAKE_CURRENT_SOURCE_DIR} NAME)
     string(TOLOWER ${current_dir_name} dir_prefix)
@@ -63,7 +63,7 @@ function(add_mli_test)
     endif()
   endif()
 
-  set(gen_target_name Generate_${sanitized_path_prefix}_${test_filename_base}_${test_function_name}_BC)
+  set(gen_target_name Generate_${sanitized_path_prefix}_${test_name_base}_${test_function_name}_BC)
 
   # --- Ensure source file exists ---
   if(NOT EXISTS ${mlir_source_abs_path})
@@ -109,10 +109,11 @@ function(add_mli_test)
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${test_subdir}
     COMMAND $<TARGET_FILE:mli> ${test_filename_base}.mlir ${mli_function_arg} ${test_mli_args} ${mli_formatting_args}
   )
+
   set_tests_properties(${mlir_test_name} PROPERTIES
     TIMEOUT 60
     LABELS "${test_label}"
-    PASS_REGULAR_EXPRESSION "${test_regex}"
+    PASS_REGULAR_EXPRESSION ${test_regex}
   )
 
   # --- Add the .bc test ---

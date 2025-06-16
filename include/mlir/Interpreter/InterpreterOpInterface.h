@@ -15,11 +15,14 @@
 #define MLIR_INTERFACES_INTERPRETEROPINTERFACE_H_
 
 #include "mlir/Dialect/Traits.h"
+#include "mlir/Dialect/LLVMIR/LLVMTypes.h"
 #include "mlir/IR/OpDefinition.h"
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/IntrusiveRefCntPtr.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/APInt.h"
+#include "llvm/ADT/APFloat.h"
 
 #include <memory>
 #include <string>
@@ -69,6 +72,7 @@ public:
 
 private:
   explicit EvalValue(detail::EvalValueImpl *impl);
+  friend llvm::raw_ostream& operator<<(llvm::raw_ostream& os, const mlir::EvalValue& val);
 
 public:
   /// Returns the type of the evaluated value.
@@ -113,6 +117,7 @@ public:
 private:
   llvm::IntrusiveRefCntPtr<detail::EvalValueImpl> impl;
 };
+
 
 /// A class to represent interpreter evaluation errors.
 class EvalError {

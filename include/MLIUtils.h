@@ -219,6 +219,21 @@ inline APFloat compute(const APFloat &lhs, const APInt &rhs,
   return result;
 }
 
+/// Get iterable represented as a comma-separated list
+template <typename T>
+inline std::string printAsList(const llvm::ArrayRef<T> arr) {
+    std::string output = arr.size() > 1 ? "(" : "";
+    llvm::raw_string_ostream os(output);
+    for (auto it = arr.begin(); it != arr.end(); ++it) {
+        if (it != arr.begin()) os << ", ";
+        os << *it;
+    }
+    if (arr.size() > 1) {
+        os << ")";
+    }
+    return os.str();
+}
+
 } // namespace mli
 
 #endif // MLI_UTILS_H
