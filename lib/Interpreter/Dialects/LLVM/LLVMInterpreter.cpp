@@ -22,13 +22,10 @@
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/Interpreter/Interpreter.h"
 #include "mlir/Interpreter/InterpreterOpInterface.h"
-#include "llvm/ADT/APInt.h"
 #include "llvm/ADT/APSInt.h"
-#include "llvm/ADT/APFloat.h"
 
 using namespace mlir;
 using namespace mli;
-typedef llvm::APFloat::Semantics Semantics;
 
 namespace {
 

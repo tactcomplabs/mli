@@ -22,12 +22,9 @@
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Interpreter/Interpreter.h"
 #include "mlir/Interpreter/InterpreterOpInterface.h"
-#include "llvm/ADT/APFloat.h"
-#include "llvm/ADT/APInt.h"
 
 using namespace mlir;
 using namespace mli;
-typedef llvm::APFloatBase::Semantics Semantics;
 
 namespace {
 
@@ -86,6 +83,49 @@ struct ArithAddIOpInterpreter
 
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(),
                                                   &result, sizeof(result));
+    return interpreter.createBindValueResult(evalResult);
+  }
+};
+
+struct ArithAddUIExtendedOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<ArithAddUIExtendedOpInterpreter,
+                                                   arith::AddUIExtendedOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = false;
+    bool overflow = false;
+    mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
+    APInt lhs = getIntegerData(operands[0], isSigned);
+    mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
+    APInt rhs = getIntegerData(operands[1], isSigned);
+    mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
+    APInt result = lhs.uadd_ov(rhs, overflow);
+    mli::fmt::printResult(llvm::outs(), std::make_pair(result, overflow), isSigned);
+    // Create an EvalValue from the result
+    EvalValue evalResults[2];
+    evalResults[0] = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    evalResults[1] = interpreter.createEvalValue(op->getResult(1).getType(), &overflow, sizeof(overflow));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
+    return interpreter.createBindValueResult(evalResults);
+  }
+};
+
+struct ArithAndIOpInterpreter
+    : public InterpreterOpInterface::ExternalModel<ArithAndIOpInterpreter,
+                                                   arith::AndIOp> {
+  static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                              ArrayRef<EvalValue> operands) {
+    bool isSigned = false;
+    mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
+    APInt lhs = getIntegerData(operands[0], isSigned);
+    mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
+    APInt rhs = getIntegerData(operands[1], isSigned);
+    mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
+    APInt result = lhs & rhs;
+    mli::fmt::printResult(llvm::outs(), result, isSigned);
+    // Create an EvalValue from the result
+    auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
+    // Wrap the EvalValue in an ArrayRef and return the EvalResult
     return interpreter.createBindValueResult(evalResult);
   }
 };
@@ -600,6 +640,8 @@ struct ArithFPToUIOpInterpreter
 void ArithInterpreter::attachInterface(MLIRContext &context) {
   arith::AddFOp::attachInterface<ArithAddFOpInterpreter>(context);
   arith::AddIOp::attachInterface<ArithAddIOpInterpreter>(context);
+  arith::AddUIExtendedOp::attachInterface<ArithAddUIExtendedOpInterpreter>(context);
+  arith::AndIOp::attachInterface<ArithAndIOpInterpreter>(context);
   arith::CmpFOp::attachInterface<ArithCmpFOpInterpreter>(context);
   arith::CmpIOp::attachInterface<ArithCmpIOpInterpreter>(context);
   arith::ConstantOp::attachInterface<ArithConstantOpInterpreter>(context);

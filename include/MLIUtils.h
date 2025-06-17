@@ -33,8 +33,8 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/SourceMgr.h"
 
-typedef llvm::APFloatBase::Semantics Semantics;
 using namespace llvm;
+using Semantics = APFloatBase::Semantics;
 
 namespace mli {
 
@@ -45,7 +45,7 @@ inline mlir::OwningOpRef<mlir::ModuleOp> parseMLIRFile(llvm::StringRef filename,
   std::string errorMessage;
   auto file = mlir::openInputFile(filename, &errorMessage);
   if (!file) {
-    llvm::errs() << errorMessage << "\n";
+    llvm::errs() << mli::fmt::error(errorMessage) << "\n";
     return nullptr;
   }
 
@@ -57,12 +57,12 @@ inline mlir::OwningOpRef<mlir::ModuleOp> parseMLIRFile(llvm::StringRef filename,
   mlir::ParserConfig config(&context);
 
   // Attempt to parse the file (text or bytecode).
-  if (auto module = mlir::parseSourceFile<mlir::ModuleOp>(sourceMgr, config)) {
-    llvm::outs() << "Successfully parsed MLIR file: " << filename << "\n";
-    return module;
+  if (auto owning_module = mlir::parseSourceFile<mlir::ModuleOp>(sourceMgr, config)) {
+    llvm::outs() << mli::fmt::success("Parsed MLIR file: ") << filename << "\n";
+    return owning_module;
   }
 
-  llvm::errs() << "Failed to parse MLIR file (unsupported format)\n";
+  llvm::errs() << mli::fmt::error("Failed to parse MLIR file") << filename << "\n";
   return nullptr;
 }
 
@@ -160,11 +160,13 @@ inline bool validateFunctionArguments(mlir::func::FuncOp funcOp,
 }
 
 /// Get integer data from an mlir::EvalValue.
-/// NOTE: Ensure that the underlying storage of `val` is large enough for uint64_t.
-inline llvm::APInt getIntegerData(const mlir::EvalValue val, bool isSigned = false) {
-  uint64_t num = val.getData<uint64_t>().front();
-  size_t width = val.getRawDataSizeInBytes();
-  return APInt(width, num, isSigned);
+inline APInt getIntegerData(const mlir::EvalValue& val, bool isSigned = false) {
+  return val.getData<APInt>().front();
+}
+
+/// Get float data from an mlir::EvalValue.
+inline APFloat getFloatData(const mlir::EvalValue& val) {
+  return val.getData<APFloat>().front();
 }
 
 /// Get semantics for a given MLIR type.
@@ -180,19 +182,9 @@ inline Semantics getFloatSemantics(const mlir::Type result_type) {
   return Semantics::S_IEEEdouble;
 }
 
-/// Get floating-point data from an mlir::EvalValue.
-inline llvm::APFloat getFloatData(const mlir::EvalValue val) {
-  if (val.getType().isF64()) {
-    double num = val.getData<double>().front();
-    return APFloat(num);
-  }
-  float num = val.getData<float>().front();
-  return APFloat(num);
-}
-
 /// Compute a unary floating point operation (e.g. std::sqrt, std::cos).
 /// The result will maintain the original number's semantics.
-inline llvm::APFloat compute(const llvm::APFloat &num, double (*func)(double)) {
+inline APFloat compute(const APFloat &num, double (*func)(double)) {
   double tmp = num.convertToDouble();
   tmp = func(tmp);
   APFloat result = APFloat(tmp);
@@ -203,7 +195,7 @@ inline llvm::APFloat compute(const llvm::APFloat &num, double (*func)(double)) {
 
 /// Compute a binary floating point operation (e.g. std::pow, std::fmax)
 /// on two floats, converting them to double for computation.
-inline llvm::APFloat compute(const llvm::APFloat &lhs, const llvm::APFloat &rhs,
+inline APFloat compute(const APFloat &lhs, const APFloat &rhs,
                               double (*func)(double, double)) {
   double tmp1 = lhs.convertToDouble();
   double tmp2 = rhs.convertToDouble();
@@ -216,7 +208,7 @@ inline llvm::APFloat compute(const llvm::APFloat &lhs, const llvm::APFloat &rhs,
 
 /// Compute a binary operation (e.g. std::powi) between a float and an integer.
 /// The float is converted to double for computation.
-inline llvm::APFloat compute(const llvm::APFloat &lhs, const llvm::APInt &rhs,
+inline APFloat compute(const APFloat &lhs, const APInt &rhs,
                               double (*func)(double, int64_t)) {
   double tmp1 = lhs.convertToDouble();
   int64_t tmp2 = rhs.getSExtValue();
@@ -225,6 +217,21 @@ inline llvm::APFloat compute(const llvm::APFloat &lhs, const llvm::APInt &rhs,
   bool losesInfo;
   result.convert(lhs.getSemantics(), llvm::RoundingMode::TowardZero, &losesInfo);
   return result;
+}
+
+/// Get iterable represented as a comma-separated list
+template <typename T>
+inline std::string printAsList(const llvm::ArrayRef<T> arr) {
+    std::string output = arr.size() > 1 ? "(" : "";
+    llvm::raw_string_ostream os(output);
+    for (auto it = arr.begin(); it != arr.end(); ++it) {
+        if (it != arr.begin()) os << ", ";
+        os << *it;
+    }
+    if (arr.size() > 1) {
+        os << ")";
+    }
+    return os.str();
 }
 
 } // namespace mli
