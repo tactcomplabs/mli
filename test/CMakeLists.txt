@@ -28,6 +28,11 @@ function(add_mli_test)
     set(bc_test_name ${test_name_base}_BYTECODE)
   endif()
 
+  # Strip extraneous spaces between args
+  if(test_mli_args)
+    string(REPLACE ", " "," test_mli_args ${test_mli_args})
+  endif()
+
   # --- Determine file paths ---
   if(NOT test_filename_base)
     # Convert the test base name to lowercase for consistent processing.
