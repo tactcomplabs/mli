@@ -1,5 +1,5 @@
-func.func @main(%arg0: f32, %arg1 : f32) -> f64 { 
-    %res = arith.extf %arg0, %arg1 : f64
-    func.return %res : f64
+func.func @main(%arg0: f16) -> f32 { 
+    %res = arith.extf %arg0 : f16 to f32
+    func.return %res : f32
 }
     

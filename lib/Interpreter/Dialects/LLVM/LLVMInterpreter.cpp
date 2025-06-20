@@ -71,7 +71,6 @@ struct LLVMAddOpInterpreter
     mli::fmt::printResult(llvm::outs(), result, isSigned);
 
     // Create an EvalValue from the result
-    // NOTE: Is the result's MLIR type from getType() compatible with APInt/APFloat?
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
 
     // Wrap the EvalValue in an ArrayRef and return the EvalResult

@@ -15,9 +15,15 @@ static mlir::EvalValue convertArgToEvalValue(
     mlir::Interpreter& interpreter,
     mlir::MLIRContext& context) {
 
-  unsigned width = argType.getIntOrFloatBitWidth();
-
-  if (mlir::isa<mlir::IntegerType>(argType)) {
+  if (mlir::isa<mlir::IndexType>(argType)) {
+    intptr_t idx_val = std::stoll(argStr);
+    llvm::outs() << mli::fmt::dim("Parsing ")
+                 << mli::fmt::highlight(argStr) << mli::fmt::dim(" as ")
+                 << mli::fmt::type("index") << "\n";
+    return interpreter.createEvalValue(argType, &idx_val, sizeof(idx_val));
+  }
+  else if (mlir::isa<mlir::IntegerType>(argType)) {
+    unsigned width = argType.getIntOrFloatBitWidth();
     APInt int_val = APInt(width, argStr, 10);
     llvm::outs() << mli::fmt::dim("Parsing ")
                 << mli::fmt::highlight(argStr) << mli::fmt::dim(" as ")
@@ -25,6 +31,7 @@ static mlir::EvalValue convertArgToEvalValue(
     return interpreter.createEvalValue(argType, &int_val, sizeof(int_val));
   }
   else if (mlir::isa<mlir::FloatType>(argType)) {
+    unsigned width = argType.getIntOrFloatBitWidth();
     Semantics s = mli::getFloatSemantics(argType);
     APFloat float_val = APFloat(APFloatBase::EnumToSemantics(s), argStr);
     llvm::outs() << mli::fmt::dim("Parsing ")
