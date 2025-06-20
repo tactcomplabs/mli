@@ -528,8 +528,20 @@ struct ArithFloorDivSIOpInterpreter
     const APInt rhs = getIntegerData(operands[1], isSigned);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
     
-    bool overflow = false;
-    const APInt result = lhs.sfloordiv_ov(rhs, overflow);
+    #if NEW_LLVM
+        bool overflow = false;
+        const APInt result = lhs.sfloordiv_ov(rhs, overflow);
+    #else
+        // We need to subtract one for floor if the result is negative and not an integer
+        // The sign of the quotient must be computed beforehand, since it can be lost in integer division
+        // e.g. -1 / 2 = 0, which isn't negative like we mathematically expect it to be
+        bool quotient_is_negative = lhs.isNegative() != rhs.isNegative();
+        APInt result, remainder;
+        APInt::sdivrem(lhs, rhs, result, remainder);
+        if (remainder != 0 && quotient_is_negative) {
+            result = result - 1;
+        }
+    #endif
     mli::fmt::printResult(llvm::outs(), result, isSigned);
     // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -857,7 +869,7 @@ struct ArithMulSIExtendedOpInterpreter
 
     const unsigned op_width = operands[0].getType().getIntOrFloatBitWidth();
     APInt prod = lhs.sext(2 * op_width);
-    prod *= rhs;
+    prod *= rhs.sext(2 * op_width);
     const APInt low = prod.extractBits(op_width, 0);
     const APInt high = prod.extractBits(op_width, op_width);
     mli::fmt::printResult(llvm::outs(), std::make_pair(low, high), isSigned);
@@ -885,7 +897,7 @@ struct ArithMulUIExtendedOpInterpreter
 
     const unsigned op_width = operands[0].getType().getIntOrFloatBitWidth();
     APInt prod = lhs.sext(2 * op_width);
-    prod *= rhs;
+    prod *= rhs.sext(2 * op_width);
     const APInt low = prod.extractBits(op_width, 0);
     const APInt high = prod.extractBits(op_width, op_width);
     mli::fmt::printResult(llvm::outs(), std::make_pair(low, high), isSigned);
