@@ -46,9 +46,9 @@ struct LLVMFNegOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat result = -lhs;
+    const APFloat result = -lhs;
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -63,11 +63,11 @@ struct LLVMAddOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = true;
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APInt lhs = getIntegerData(operands[0]);
+    const APInt lhs = getIntegerData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt rhs = getIntegerData(operands[1]);
+    const APInt rhs = getIntegerData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
-    APInt result = lhs + rhs;
+    const APInt result = lhs + rhs;
     mli::fmt::printResult(llvm::outs(), result, isSigned);
 
     // Create an EvalValue from the result
@@ -84,11 +84,11 @@ struct LLVMFAddOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat rhs = getFloatData(operands[1]);
+    const APFloat rhs = getFloatData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
-    APFloat result = lhs + rhs;
+    const APFloat result = lhs + rhs;
     mli::fmt::printResult(llvm::outs(), result);
 
     // Create an EvalValue from the result
@@ -106,11 +106,11 @@ struct LLVMSubOpInterpreter
     bool isSigned = true;
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
 
-    APInt lhs = getIntegerData(operands[0]);
+    const APInt lhs = getIntegerData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt rhs = getIntegerData(operands[1]);
+    const APInt rhs = getIntegerData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
-    APInt result = lhs - rhs;
+    const APInt result = lhs - rhs;
     mli::fmt::printResult(llvm::outs(), result, isSigned);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -124,11 +124,11 @@ struct LLVMFSubOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat rhs = getFloatData(operands[1]);
+    const APFloat rhs = getFloatData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
-    APFloat result = lhs - rhs;
+    const APFloat result = lhs - rhs;
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -142,11 +142,11 @@ struct LLVMMulOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = true;
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APInt lhs = getIntegerData(operands[0]);
+    const APInt lhs = getIntegerData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt rhs = getIntegerData(operands[1]);
+    const APInt rhs = getIntegerData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
-    APInt result = lhs * rhs;
+    const APInt result = lhs * rhs;
     mli::fmt::printResult(llvm::outs(), result, isSigned);
 
     // Create an EvalValue from the result
@@ -162,11 +162,11 @@ struct LLVMFMulOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat rhs = getFloatData(operands[1]);
+    const APFloat rhs = getFloatData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
-    APFloat result = lhs * rhs;
+    const APFloat result = lhs * rhs;
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -182,11 +182,11 @@ struct LLVMUDivOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = false;
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APInt lhs = getIntegerData(operands[0], isSigned);
+    const APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt rhs = getIntegerData(operands[1], isSigned);
+    const APInt rhs = getIntegerData(operands[1], isSigned);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
-    APInt result = lhs.udiv(rhs);
+    const APInt result = lhs.udiv(rhs);
     mli::fmt::printResult(llvm::outs(), result, isSigned);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -202,11 +202,11 @@ struct LLVMSDivOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = true;
     llvm::outs() << "Interpreting " << op->getName() << "\n";
-    APInt lhs = getIntegerData(operands[0]);
+    const APInt lhs = getIntegerData(operands[0]);
     lhs.print(llvm::outs() << "lhs: ", isSigned);
-    APInt rhs = getIntegerData(operands[1]);
+    const APInt rhs = getIntegerData(operands[1]);
     rhs.print(llvm::outs() << "rhs: ", isSigned);
-    APInt result = lhs.sdiv(rhs);
+    const APInt result = lhs.sdiv(rhs);
     mli::fmt::printResult(llvm::outs(), result, isSigned);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -221,11 +221,11 @@ struct LLVMFDivOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat rhs = getFloatData(operands[1]);
+    const APFloat rhs = getFloatData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
-    APFloat result = lhs / rhs;
+    const APFloat result = lhs / rhs;
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -241,11 +241,11 @@ struct LLVMURemOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = false;
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APInt lhs = getIntegerData(operands[0], isSigned);
+    const APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt rhs = getIntegerData(operands[1], isSigned);
+    const APInt rhs = getIntegerData(operands[1], isSigned);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
-    APInt result = lhs.urem(rhs);
+    const APInt result = lhs.urem(rhs);
     mli::fmt::printResult(llvm::outs(), result, isSigned);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -261,11 +261,11 @@ struct LLVMSRemOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = true;
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APInt lhs = getIntegerData(operands[0]);
+    const APInt lhs = getIntegerData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt rhs = getIntegerData(operands[1]);
+    const APInt rhs = getIntegerData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
-    APInt result = lhs.srem(rhs);
+    const APInt result = lhs.srem(rhs);
     mli::fmt::printResult(llvm::outs(), result, isSigned);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -280,13 +280,13 @@ struct LLVMFRemOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat rhs = getFloatData(operands[1]);
+    const APFloat rhs = getFloatData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
 
-    lhs.mod(rhs);
     APFloat result = lhs;
+    result.mod(rhs);
 
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
@@ -307,9 +307,9 @@ struct LLVMICmpOpInterpreter
                  || att == LLVM::ICmpPredicate::sgt || att == LLVM::ICmpPredicate::sge;
 
     llvm::outs() << "Interpreting LLVM::ICmp\n";
-    APInt lhs = getIntegerData(operands[0], isSigned);
+    const APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt rhs = getIntegerData(operands[1], isSigned);
+    const APInt rhs = getIntegerData(operands[1], isSigned);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
 
     bool result;
@@ -361,9 +361,9 @@ struct LLVMFCmpOpInterpreter
     // FCmp has various attributes specifying the type of comparison to make
     LLVM::FCmpPredicate att = op->getAttrOfType<LLVM::FCmpPredicateAttr>("predicate").getValue();
     llvm::outs() << "Interpreting LLVM::FCmp\n";
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat rhs = getFloatData(operands[1]);
+    const APFloat rhs = getFloatData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
 
     bool lhs_NaN = lhs.isNaN();
@@ -434,11 +434,11 @@ struct LLVMShlOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = true;
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APInt lhs = getIntegerData(operands[0]);
+    const APInt lhs = getIntegerData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt rhs = getIntegerData(operands[1]);
+    const APInt rhs = getIntegerData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
-    APInt result = lhs.shl(rhs);
+    const APInt result = lhs.shl(rhs);
     mli::fmt::printResult(llvm::outs(), result, isSigned);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -454,11 +454,11 @@ struct LLVMLShrOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = true;
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APInt lhs = getIntegerData(operands[0]);
+    const APInt lhs = getIntegerData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt rhs = getIntegerData(operands[1]);
+    const APInt rhs = getIntegerData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
-    APInt result = lhs.lshr(rhs);
+    const APInt result = lhs.lshr(rhs);
     mli::fmt::printResult(llvm::outs(), result, isSigned);
 
     // Create an EvalValue from the result
@@ -475,11 +475,11 @@ struct LLVMAShrOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = true;
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APInt lhs = getIntegerData(operands[0]);
+    const APInt lhs = getIntegerData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt rhs = getIntegerData(operands[1]);
+    const APInt rhs = getIntegerData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
-    APInt result = lhs.ashr(rhs);
+    const APInt result = lhs.ashr(rhs);
     mli::fmt::printResult(llvm::outs(), result, isSigned);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -495,11 +495,11 @@ struct LLVMAndOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = true;
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APInt lhs = getIntegerData(operands[0]);
+    const APInt lhs = getIntegerData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt rhs = getIntegerData(operands[1]);
+    const APInt rhs = getIntegerData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
-    APInt result = lhs & rhs;
+    const APInt result = lhs & rhs;
     mli::fmt::printResult(llvm::outs(), result, isSigned);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -515,11 +515,11 @@ struct LLVMOrOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = true;
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APInt lhs = getIntegerData(operands[0]);
+    const APInt lhs = getIntegerData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt rhs = getIntegerData(operands[1]);
+    const APInt rhs = getIntegerData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
-    APInt result = lhs | rhs;
+    const APInt result = lhs | rhs;
     mli::fmt::printResult(llvm::outs(), result, isSigned);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -534,11 +534,11 @@ struct LLVMXOrOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = true;
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APInt lhs = getIntegerData(operands[0]);
+    const APInt lhs = getIntegerData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt rhs = getIntegerData(operands[1]);
+    const APInt rhs = getIntegerData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
-    APInt result = lhs ^ rhs;
+    const APInt result = lhs ^ rhs;
     mli::fmt::printResult(llvm::outs(), result, isSigned);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -554,10 +554,10 @@ struct LLVMTruncOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = true;
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APInt lhs = getIntegerData(operands[0], isSigned);
+    const APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
     unsigned result_width = op->getOpResult(0).getType().getIntOrFloatBitWidth();
-    APInt result = lhs.trunc(result_width);
+    const APInt result = lhs.trunc(result_width);
     mli::fmt::printResult(llvm::outs(), result, isSigned);
 
     // Create an EvalValue from the result
@@ -573,14 +573,14 @@ struct LLVMFPTruncOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
 
     bool loseInfo;
     auto result_type = op->getOpResult(0).getType();
-    lhs.convert(llvm::APFloatBase::EnumToSemantics(getFloatSemantics(result_type)), llvm::APFloat::rmTowardZero, &loseInfo);
-
     APFloat result = lhs;
+    result.convert(llvm::APFloatBase::EnumToSemantics(getFloatSemantics(result_type)), llvm::APFloat::rmTowardZero, &loseInfo);
+
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(result_type, &result, sizeof(result));
@@ -596,11 +596,11 @@ struct LLVMZExtOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = true; // garbage value
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APInt lhs = getIntegerData(operands[0], isSigned);
+    const APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
 
     unsigned result_width = op->getResult(0).getType().getIntOrFloatBitWidth();
-    APInt result = lhs.zext(result_width);
+    const APInt result = lhs.zext(result_width);
     mli::fmt::printResult(llvm::outs(), result, isSigned);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -616,12 +616,12 @@ struct LLVMSExtOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = true;
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APInt lhs = getIntegerData(operands[0], isSigned);
+    const APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
 
     unsigned result_width = op->getResult(0).getType().getIntOrFloatBitWidth();
     llvm::outs() << "Extending to " << result_width << " bits\n";
-    APInt result = lhs.sext(result_width);
+    const APInt result = lhs.sext(result_width);
     mli::fmt::printResult(llvm::outs(), result, isSigned);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -644,17 +644,17 @@ struct LLVMBitcastOpInterpreter
         evalResult = operands[0];
     }
     else if (llvm::isa<mlir::FloatType>(src_type)) { // src float, ret int
-        APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = getFloatData(operands[0]);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        APInt result = lhs.bitcastToAPInt();
+        const APInt result = lhs.bitcastToAPInt();
         mli::fmt::printResult(llvm::outs(), result);
         evalResult = interpreter.createEvalValue(result_type, &result, sizeof(result));
     }
     else if (llvm::isa<mlir::IntegerType>(src_type)) { // src int, ret float
-        APInt lhs = getIntegerData(operands[0]);
+        const APInt lhs = getIntegerData(operands[0]);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
         Semantics s = getFloatSemantics(result_type);
-        APFloat result = APFloat(llvm::APFloat::EnumToSemantics(s), lhs);
+        const APFloat result = APFloat(llvm::APFloat::EnumToSemantics(s), lhs);
         mli::fmt::printResult(llvm::outs(), result);
         evalResult = interpreter.createEvalValue(result_type, &result, sizeof(result));
     }
@@ -671,14 +671,14 @@ struct LLVMFPExtOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
 
     bool loseInfo;
     auto result_type = op->getOpResult(0).getType();
-    lhs.convert(llvm::APFloatBase::EnumToSemantics(getFloatSemantics(result_type)), llvm::APFloat::rmTowardZero, &loseInfo);
-
     APFloat result = lhs;
+    result.convert(llvm::APFloatBase::EnumToSemantics(getFloatSemantics(result_type)), llvm::APFloat::rmTowardZero, &loseInfo);
+
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(result_type, &result, sizeof(result));
@@ -693,7 +693,7 @@ struct LLVMFPToSIOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
 
     unsigned result_width = op->getResult(0).getType().getIntOrFloatBitWidth();
@@ -715,7 +715,7 @@ struct LLVMFPToUIOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     lhs.print(llvm::outs() << "lhs: ");
 
     unsigned result_width = op->getResult(0).getType().getIntOrFloatBitWidth();
@@ -738,7 +738,7 @@ struct LLVMSIToFPOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = true;
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APInt lhs = getIntegerData(operands[0], isSigned);
+    const APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
 
     Semantics sem = getFloatSemantics(op->getResult(0).getType());
@@ -760,7 +760,7 @@ struct LLVMUIToFPOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = false;
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APInt lhs = getIntegerData(operands[0], isSigned);
+    const APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
 
     Semantics sem = getFloatSemantics(op->getResult(0).getType());
@@ -782,9 +782,9 @@ struct LLVMAbsOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = true;
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APInt lhs = getIntegerData(operands[0], isSigned);
+    const APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt result = lhs.abs();
+    const APInt result = lhs.abs();
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
     // Wrap the EvalValue in an ArrayRef and return the EvalResult
@@ -798,10 +798,10 @@ struct LLVMCosOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
 
-    APFloat result = compute(lhs, std::cos);
+    const APFloat result = compute(lhs, std::cos);
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -816,9 +816,9 @@ struct LLVMExp2OpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat result = compute(lhs, std::exp2);
+    const APFloat result = compute(lhs, std::exp2);
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -833,9 +833,9 @@ struct LLVMExpOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat result = compute(lhs, std::exp);
+    const APFloat result = compute(lhs, std::exp);
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -850,9 +850,9 @@ struct LLVMFAbsOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat result = llvm::abs(lhs);
+    const APFloat result = llvm::abs(lhs);
     mli::fmt::printResult(llvm::outs(), result);
     // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -867,11 +867,11 @@ struct LLVMFCeilOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
 
-    lhs.roundToIntegral(llvm::RoundingMode::TowardPositive);
     APFloat result = lhs;
+    result.roundToIntegral(llvm::RoundingMode::TowardPositive);
     mli::fmt::printResult(llvm::outs(), result);
     // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -886,11 +886,11 @@ struct LLVMFFloorOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
 
-    lhs.roundToIntegral(llvm::RoundingMode::TowardNegative);
     APFloat result = lhs;
+    result.roundToIntegral(llvm::RoundingMode::TowardNegative);
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -905,9 +905,9 @@ struct LLVMFMAOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat rhs = getFloatData(operands[1]);
+    const APFloat rhs = getFloatData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
     APFloat result = getFloatData(operands[2]);
     result.print(llvm::outs() << "result (before FMA): ");
@@ -927,9 +927,9 @@ struct LLVMLog10OpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat result = compute(lhs, std::log10);
+    const APFloat result = compute(lhs, std::log10);
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -944,9 +944,9 @@ struct LLVMLog2OpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat result = compute(lhs, std::log2);
+    const APFloat result = compute(lhs, std::log2);
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -961,9 +961,9 @@ struct LLVMLogOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat result = compute(lhs, std::log);
+    const APFloat result = compute(lhs, std::log);
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -978,11 +978,11 @@ struct LLVMMinNumOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     llvm::outs() << "Interpreting LLVM::MinNum\n";
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat rhs = getFloatData(operands[1]);
+    const APFloat rhs = getFloatData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
-    APFloat result = llvm::minnum(lhs, rhs);
+    const APFloat result = llvm::minnum(lhs, rhs);
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -997,11 +997,11 @@ struct LLVMMinimumOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     llvm::outs() << "Interpreting LLVM::Minimum\n";
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat rhs = getFloatData(operands[1]);
+    const APFloat rhs = getFloatData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
-    APFloat result = llvm::minimum(lhs, rhs);
+    const APFloat result = llvm::minimum(lhs, rhs);
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -1016,11 +1016,11 @@ struct LLVMMaximumOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     llvm::outs() << "Interpreting LLVM::Maximum\n";
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat rhs = getFloatData(operands[1]);
+    const APFloat rhs = getFloatData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
-    APFloat result = llvm::maximum(lhs, rhs);
+    const APFloat result = llvm::maximum(lhs, rhs);
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -1035,11 +1035,11 @@ struct LLVMMaxNumOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     llvm::outs() << "Interpreting LLVM::MaxNum\n";
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat rhs = getFloatData(operands[1]);
+    const APFloat rhs = getFloatData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
-    APFloat result = llvm::maxnum(lhs, rhs);
+    const APFloat result = llvm::maxnum(lhs, rhs);
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -1054,9 +1054,9 @@ struct LLVMSinOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat result = compute(lhs, std::sin);
+    const APFloat result = compute(lhs, std::sin);
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -1071,9 +1071,9 @@ struct LLVMSqrtOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     llvm::outs() << "Interpreting LLVM::Sqrt\n";
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat result = compute(lhs, std::sqrt);
+    const APFloat result = compute(lhs, std::sqrt);
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -1088,11 +1088,11 @@ struct LLVMPowOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     llvm::outs() << "Interpreting LLVM::Pow\n";
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APFloat rhs = getFloatData(operands[1]);
+    const APFloat rhs = getFloatData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
-    APFloat result = compute(lhs, rhs, std::pow);
+    const APFloat result = compute(lhs, rhs, std::pow);
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -1107,11 +1107,11 @@ struct LLVMPowIOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     llvm::outs() << "Interpreting LLVM::PowI\n";
-    APFloat lhs = getFloatData(operands[0]);
+    const APFloat lhs = getFloatData(operands[0]);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-    APInt rhs = getIntegerData(operands[1]);
+    const APInt rhs = getIntegerData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", lhs);
-    APFloat result = compute(lhs, rhs, std::pow);
+    const APFloat result = compute(lhs, rhs, std::pow);
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -1127,11 +1127,11 @@ struct LLVMSMaxOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = true;
     llvm::outs() << "Interpreting LLVM::SMax\n";
-    APInt lhs = getIntegerData(operands[0], isSigned);
+    const APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt rhs = getIntegerData(operands[1], isSigned);
+    const APInt rhs = getIntegerData(operands[1], isSigned);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
-    APInt result = lhs.sgt(rhs) ? lhs : rhs;
+    const APInt result = lhs.sgt(rhs) ? lhs : rhs;
     mli::fmt::printResult(llvm::outs(), result, isSigned);
 
     // Create an EvalValue from the result
@@ -1148,11 +1148,11 @@ struct LLVMSMinOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = true;
     llvm::outs() << "Interpreting LLVM::SMin\n";
-    APInt lhs = getIntegerData(operands[0], isSigned);
+    const APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt rhs = getIntegerData(operands[1], isSigned);
+    const APInt rhs = getIntegerData(operands[1], isSigned);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
-    APInt result = lhs.slt(rhs) ? lhs : rhs;
+    const APInt result = lhs.slt(rhs) ? lhs : rhs;
     mli::fmt::printResult(llvm::outs(), result, isSigned);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -1168,11 +1168,11 @@ struct LLVMUMaxOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = false;
     llvm::outs() << "Interpreting LLVM::UMax\n";
-    APInt lhs = getIntegerData(operands[0], isSigned);
+    const APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt rhs = getIntegerData(operands[1], isSigned);
+    const APInt rhs = getIntegerData(operands[1], isSigned);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
-    APInt result = lhs.ugt(rhs) ? lhs:rhs;
+    const APInt result = lhs.ugt(rhs) ? lhs:rhs;
     mli::fmt::printResult(llvm::outs(), result, isSigned);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -1188,11 +1188,11 @@ struct LLVMUMinOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = false;
     llvm::outs() << "Interpreting LLVM::UMin\n";
-    APInt lhs = getIntegerData(operands[0], isSigned);
+    const APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt rhs = getIntegerData(operands[1], isSigned);
+    const APInt rhs = getIntegerData(operands[1], isSigned);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
-    APInt result = lhs.ult(rhs) ? lhs : rhs;
+    const APInt result = lhs.ult(rhs) ? lhs : rhs;
     mli::fmt::printResult(llvm::outs(), result, isSigned);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -1208,9 +1208,9 @@ struct LLVMBitReverseOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = false;
     llvm::outs() << "Interpreting LLVM::BitReverse\n";
-    APInt lhs = getIntegerData(operands[0], isSigned);
+    const APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt result = lhs.reverseBits();
+    const APInt result = lhs.reverseBits();
     mli::fmt::printResult(llvm::outs(), result, isSigned);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -1226,9 +1226,9 @@ struct LLVMByteSwapOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = false;
     llvm::outs() << "Interpreting LLVM::ByteSwap\n";
-    APInt lhs = getIntegerData(operands[0], isSigned);
+    const APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-    APInt result = lhs.byteSwap();
+    const APInt result = lhs.byteSwap();
     mli::fmt::printResult(llvm::outs(), result, isSigned);
         // Create an EvalValue from the result
     auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -1243,11 +1243,12 @@ struct LLVMCopySignOpInterpreter
   static EvalResult interpret(Operation *op, Interpreter &interpreter,
                               ArrayRef<EvalValue> operands) {
     llvm::outs() << "Interpreting LLVM::CopySign\n";
-    APFloat result = getFloatData(operands[0]);
-    mli::fmt::printOperand(llvm::outs(), "lhs", result);
-    APFloat rhs = getFloatData(operands[1]);
+    const APFloat lhs = getFloatData(operands[0]);
+    mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
+    const APFloat rhs = getFloatData(operands[1]);
     mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
 
+    APFloat result = lhs;
     result.copySign(rhs);
     mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
@@ -1264,7 +1265,7 @@ struct LLVMCountLeadingZerosOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = false;
     llvm::outs() << "Interpreting LLVM::CountLeadingZeros\n";
-    APInt lhs = getIntegerData(operands[0], isSigned);
+    const APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
     unsigned result = lhs.countLeadingZeros();
     mli::fmt::printResult(llvm::outs(), result);
@@ -1282,7 +1283,7 @@ struct LLVMCountTrailingZerosOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = false;
     llvm::outs() << "Interpreting LLVM::CountLeadingZeros\n";
-    APInt lhs = getIntegerData(operands[0], isSigned);
+    const APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
     unsigned result = lhs.countTrailingZeros();
     mli::fmt::printResult(llvm::outs(), result);
@@ -1300,7 +1301,7 @@ struct LLVMCtPopOpInterpreter
                               ArrayRef<EvalValue> operands) {
     bool isSigned = false;
     llvm::outs() << "Interpreting LLVM::CtPop\n";
-    APInt lhs = getIntegerData(operands[0], isSigned);
+    const APInt lhs = getIntegerData(operands[0], isSigned);
     mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
 
     unsigned result = lhs.popcount();
@@ -1346,12 +1347,12 @@ struct LLVMConstantOpInterpreter
     auto att = op->getAttr("value");
     EvalValue evalResult;
     if (auto int_att = dyn_cast<IntegerAttr>(att)) {
-        APInt result = int_att.getValue();
+        const APInt result = int_att.getValue();
         result.print(llvm::outs() << "Initializing constant ", false);
         evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
             }
     else if (auto float_att = dyn_cast<FloatAttr>(att)) {
-        APFloat result = float_att.getValue();
+        const APFloat result = float_att.getValue();
         result.print(llvm::outs() << "Initializing constant ");
         evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
     }
