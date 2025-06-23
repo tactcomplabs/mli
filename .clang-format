@@ -32,10 +32,17 @@ BraceWrapping:
   BeforeWhile: false
 BreakConstructorInitializers: BeforeColon
 FixNamespaceComments: true
+IndentCaseBlocks: true
+IndentCaseLabels: true
 IndentWidth: 4
 IndentWrappedFunctionNames: true
 SortIncludes: true
-SpaceBeforeParens: Never
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+  AfterControlStatements: true
+  AfterFunctionDefinitionName: false
+  AfterFunctionDeclarationName: false
+  AfterIfMacros: true
 SpacesInAngles: Never
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
