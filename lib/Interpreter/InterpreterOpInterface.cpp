@@ -24,7 +24,14 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& os, const EvalValue& val) {
             os << data[0];
         }
     }
-    // Handle integer types
+    // Handle index types
+    else if (valType.isIndex()) {
+        auto data = val.getData<intptr_t>();
+        if (!data.empty()) {
+            os << data[0];
+        }
+    }
+    // Handle integers
     else if (valType.isIntOrIndex()) {
         auto data = val.getData<APInt>();
         if (!data.empty()) {

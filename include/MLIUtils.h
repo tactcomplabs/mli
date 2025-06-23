@@ -171,7 +171,7 @@ inline APFloat getFloatData(const mlir::EvalValue& val) {
 
 /// Get semantics for a given MLIR type.
 /// These semantics are used in constructing/converting APFloat types.
-inline Semantics getFloatSemantics(const mlir::Type result_type) {
+inline Semantics getFloatSemantics(const mlir::Type& result_type) {
   if (result_type.isF16()) { // 16-bit float.
     return Semantics::S_IEEEhalf;
   } else if (result_type.isBF16()) { // 16-bit brain float.
