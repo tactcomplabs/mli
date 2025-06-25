@@ -1,0 +1,5 @@
+if(ENABLE_TESTING)
+  add_mli_test(name_base FUNC_CALL          subdir call            mli_args "--args=1,2"      regex "result: 3")
+  add_mli_test(name_base FUNC_CALL_INDIRECT subdir call_indirect   mli_args "--args=1,2"      regex "result: 3")
+  add_mli_test(name_base FUNC_CONSTANT      subdir constant        mli_args "--args=1,2"      regex "Creating reference to function add")
+ endif()
