@@ -6,7 +6,7 @@
 //
 // The remaining portions of this file are:
 //
-// Copyright (C) 2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2024-2025 Tactical Computing Laboratories, LLC
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -31,20 +31,20 @@ namespace mlir {
 
 /// Dialect interpreter for the Func dialect.
 class FuncInterpreter {
-public:
-  using Dialect = func::FuncDialect;
-  using Context = void;
+  public:
+    using Dialect = func::FuncDialect;
+    using Context = void;
 
-  /// Attach the InterpreterOpInterface to the ops in the Func dialect.
-  static void attachInterface(MLIRContext &context);
+    /// Attach the InterpreterOpInterface to the ops in the Func dialect.
+    static void attachInterface(MLIRContext& context);
 
-  /// Create an interpreter context.
-  static Context *createContext() { return nullptr; }
+    /// Create an interpreter context.
+    static Context* createContext() { return nullptr; }
 
-  /// Destroy the interpreter context.
-  static void destroyContext(Context *) {}
+    /// Destroy the interpreter context.
+    static void destroyContext(Context*) {}
 };
 
-} // namespace mlir
+}  // namespace mlir
 
-#endif // MLIR_INTERPRETER_DIALECTS_FUNCINTERPRETER_H_
+#endif  // MLIR_INTERPRETER_DIALECTS_FUNCINTERPRETER_H_

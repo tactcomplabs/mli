@@ -63,7 +63,7 @@ function(add_mli_test)
   # resulting in an empty or "." relative path.
   if(NOT sanitized_path_prefix OR sanitized_path_prefix STREQUAL ".")
     if(sanitized_path_prefix STREQUAL ".")
-      # Request that the operation's test be moved to its constituent dialect subdirectory 
+      # Request that the operation's test be moved to its constituent dialect subdirectory
       set(sanitized_path_prefix "move_this_test_to_its_own_dialect_directory_like_llvm_ir_or_arith")
     endif()
   endif()
