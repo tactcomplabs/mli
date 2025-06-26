@@ -1,6 +1,6 @@
-//===- ArithInterpreter.h - Arith dialect interpreter -------------*- C++ -*-===//
+//===- CFInterpreter.h - CF dialect interpreter -------------*- C++ -*-===//
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,21 +16,22 @@
 // limitations under the License.
 //===----------------------------------------------------------------------===//
 //
-// This file contains the dialect interpreter declaration for the Arith dialect.
+// This file contains the dialect interpreter declaration for the CF dialect.
 //
 //===----------------------------------------------------------------------===//
-#ifndef MLIR_INTERPRETER_DIALECTS_ARITHINTERPRETER_H_
-#define MLIR_INTERPRETER_DIALECTS_ARITHINTERPRETER_H_
+#ifndef MLIR_INTERPRETER_DIALECTS_CFINTERPRETER_H_
+#define MLIR_INTERPRETER_DIALECTS_CFINTERPRETER_H_
 
-#include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/Dialect/ControlFlow/IR/ControlFlow.h"
+#include "mlir/Dialect/ControlFlow/IR/ControlFlowOps.h"
 #include "mlir/IR/MLIRContext.h"
 
 namespace mlir {
 
-/// Dialect interpreter for the Arith dialect.
-class ArithInterpreter {
+/// Dialect interpreter for the CF dialect.
+class CFInterpreter {
 public:
-  using Dialect = arith::ArithDialect;
+  using Dialect = cf::ControlFlowDialect;
   using Context = void;
 
   /// Attach the InterpreterOpInterface to the ops in the Func dialect.
@@ -45,4 +46,4 @@ public:
 
 } // namespace mlir
 
-#endif // MLIR_INTERPRETER_DIALECTS_ARITHINTERPRETER_H_
+#endif // MLIR_INTERPRETER_DIALECTS_CFINTERPRETER_H_

@@ -24,10 +24,15 @@ static mlir::EvalValue convertArgToEvalValue(
   }
   else if (mlir::isa<mlir::IntegerType>(argType)) {
     unsigned width = argType.getIntOrFloatBitWidth();
-    APInt int_val = APInt(width, argStr, 10);
     llvm::outs() << mli::fmt::dim("Parsing ")
                 << mli::fmt::highlight(argStr) << mli::fmt::dim(" as ")
                 << mli::fmt::type("i" + std::to_string(width)) << "\n";
+    if (width == 1) {
+        bool bool_val = argStr != "0" && argStr != "false";
+        return interpreter.createEvalValue(argType, &bool_val, sizeof(bool_val));
+
+    }
+    APInt int_val = APInt(width, argStr, 10);
     return interpreter.createEvalValue(argType, &int_val, sizeof(int_val));
   }
   else if (mlir::isa<mlir::FloatType>(argType)) {

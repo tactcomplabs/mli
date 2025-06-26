@@ -46,6 +46,7 @@ target_link_libraries(mli
   MLIRInterpreterLib
   MLIRIR
   MLIRArithDialect
+  MLIRControlFlowDialect
   MLIRFuncDialect
   MLIRLLVMDialect
   MLIRSupport

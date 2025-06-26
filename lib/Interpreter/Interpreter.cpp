@@ -124,6 +124,7 @@ EvalResult Interpreter::execute(Region &region, ArrayRef<EvalValue> arguments) {
     case EvalResultKind::YieldValue:
       return result;
     case EvalResultKind::Branch:
+    case EvalResultKind::Void:
       break;
     }
   }
@@ -147,6 +148,8 @@ EvalResult Interpreter::execute(Block &block, ArrayRef<EvalValue> arguments) {
       }
       continue;
     }
+    case EvalResultKind::Void:
+        continue;
     case EvalResultKind::ReturnValue:
     case EvalResultKind::YieldValue:
     case EvalResultKind::Branch:

@@ -25,6 +25,7 @@ add_library(MLIRInterpreterLib SHARED
   Interpreter/Dialects/Func/FuncInterpreter.cpp
   Interpreter/Dialects/LLVM/LLVMInterpreter.cpp
   Interpreter/Dialects/Arith/ArithInterpreter.cpp
+  Interpreter/Dialects/CF/CFInterpreter.cpp
 )
 
 # Include directories for the library
@@ -59,6 +60,7 @@ target_link_libraries(MLIRInterpreterLib
   MLIRArithDialect
   MLIRFuncDialect
   MLIRLLVMDialect
+  MLIRControlFlowDialect
   MLIRSupport
   MLIRParser
   MLIRTransforms

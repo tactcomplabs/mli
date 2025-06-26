@@ -277,6 +277,11 @@ public:
     return EvalResult(EvalResultKind::YieldValue, values, nullptr, nullptr);
   }
 
+  /// Create an EvalResult for void results.
+  EvalResult createVoidResult() {
+    return EvalResult(EvalResultKind::Void, ArrayRef<EvalValue>(), nullptr, nullptr);
+  }
+
   /// Create an EvalResult for branching to another block.
   ///
   /// Explanation:
