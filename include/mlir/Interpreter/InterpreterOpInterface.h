@@ -159,6 +159,11 @@ enum class EvalResultKind {
     /// Branch to a new block. In this state, `getBlock()` returns the
     /// destination block and `getValues()` returns the block arguments.
     Branch,
+
+    /// For operations that do not bind to a value, branch, or return/yield (e.g. cf.assert)
+    /// This essentially mimics std::nullopt for std::optional<EvalResult>
+    /// Changing the return type to std::optional would involve invasive changes to the execute() hierarchy
+    Void
 };
 
 /// A class to represent the interpreter evaluation results.

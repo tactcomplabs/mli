@@ -1,4 +1,4 @@
-//===- LLVMInterpreter.h - LLVM dialect interpreter -------------*- C++ -*-===//
+//===- ArithInterpreter.h - Arith dialect interpreter -------------*- C++ -*-===//
 //
 // Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -16,7 +16,7 @@
 // limitations under the License.
 //===----------------------------------------------------------------------===//
 //
-// This file contains the dialect interpreter declaration for the LLVM dialect.
+// This file contains the dialect interpreter declaration for the Arith dialect.
 //
 //===----------------------------------------------------------------------===//
 #ifndef MLIR_INTERPRETER_DIALECTS_ARITHINTERPRETER_H_
@@ -27,7 +27,7 @@
 
 namespace mlir {
 
-/// Dialect interpreter for the LLVM dialect.
+/// Dialect interpreter for the Arith dialect.
 class ArithInterpreter {
   public:
     using Dialect = arith::ArithDialect;

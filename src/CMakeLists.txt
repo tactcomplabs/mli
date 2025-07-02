@@ -32,21 +32,23 @@ set(LLVM_LINK_COMPONENTS
 llvm_map_components_to_libnames(LLVM_LIBS ${LLVM_LINK_COMPONENTS})
 
 # Link mli executable against necessary libraries
-target_link_libraries(
-    mli
-    PRIVATE MLIRInterpreterLib
-            MLIRIR
-            MLIRArithDialect
-            MLIRFuncDialect
-            MLIRLLVMDialect
-            MLIRSupport
-            MLIRParser
-            MLIRTransforms
-            MLIRBytecodeOpInterface
-            MLIRBytecodeReader
-            MLIRBytecodeWriter
-            LLVMSupport
-            ${LLVM_LIBS})
+target_link_libraries(mli
+  PRIVATE
+  MLIRInterpreterLib
+  MLIRIR
+  MLIRArithDialect
+  MLIRControlFlowDialect
+  MLIRFuncDialect
+  MLIRLLVMDialect
+  MLIRSupport
+  MLIRParser
+  MLIRTransforms
+  MLIRBytecodeOpInterface
+  MLIRBytecodeReader
+  MLIRBytecodeWriter
+  LLVMSupport
+  ${LLVM_LIBS}
+)
 
 # Ensure mli depends on the generated headers
 add_dependencies(mli MLIRInterpreterOpInterfaceIncGen)

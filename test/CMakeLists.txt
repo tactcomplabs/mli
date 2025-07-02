@@ -1,6 +1,6 @@
 function(add_mli_test)
   set(options "")
-  set(oneValueArgs name_base subdir mli_args regex filename_base label function_name)
+  set(oneValueArgs name_base subdir mli_args regex filename_base label function_name expect_error)
   set(multiValueArgs "")
   cmake_parse_arguments(test  # Lowercase prefix
                         "${options}"
@@ -108,6 +108,11 @@ function(add_mli_test)
   # This removes invisible characters that can interfere with regex pattern matching
   set(mli_formatting_args "--pretty-print=false")
 
+  # Set the "will fail" attribute to false, if not already set
+  if (NOT test_expect_error)
+    set(test_expect_erorr FALSE)
+  endif()
+
   # --- Add the .mlir test ---
   add_test(
     NAME ${mlir_test_name}
@@ -118,7 +123,8 @@ function(add_mli_test)
   set_tests_properties(${mlir_test_name} PROPERTIES
     TIMEOUT 60
     LABELS "${test_label}"
-    PASS_REGULAR_EXPRESSION ${test_regex}
+    PASS_REGULAR_EXPRESSION "${test_regex}"
+    WILL_FAIL "${test_expect_error}"
   )
 
   # --- Add the .bc test ---
@@ -131,14 +137,15 @@ function(add_mli_test)
     TIMEOUT 60
     LABELS "${test_label}"
     PASS_REGULAR_EXPRESSION "${test_regex}"
+    WILL_FAIL "${test_expect_error}"
   )
 endfunction()
 
 if(ENABLE_TESTING)
   add_subdirectory(llvm_ir)
   add_subdirectory(arith)
+  add_subdirectory(cf)
   add_subdirectory(func)
-  #add_subdirectory(scf)
   add_subdirectory(mem_manager)
   if(ENABLE_POLYGEIST)
     add_subdirectory(polygeist)

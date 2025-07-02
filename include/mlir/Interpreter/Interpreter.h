@@ -154,8 +154,22 @@ class Interpreter {
     /// arguments.
     EvalResult execute(StringRef entry_func_name, ArrayRef<EvalValue> arguments);
 
-    /// Execute a function with the function arguments.
-    EvalResult execute(func::FuncOp func, ArrayRef<EvalValue> arguments);
+    /// Create an EvalResult for void results.
+    EvalResult createVoidResult() { return EvalResult(EvalResultKind::Void, ArrayRef<EvalValue>(), nullptr, nullptr); }
+
+    /// Create an EvalResult for branching to another block.
+    ///
+    /// Explanation:
+    /// br ^bb1(%1 : i32)
+    /// ^bb1(%arg1: i32):
+    ///   %2 = addi %arg1, %0 : i32
+    ///   ...
+    /// Explanation:
+    /// The br operation branches to the block ^bb1, passing %1 as an argument.
+    /// The interpreter would produce an EvalResultKind::Branch as it transitions to the new block with %1 as the block argument.
+    EvalResult createBranchResult(Block& destBlock, ArrayRef<EvalValue> values) {
+        return EvalResult(EvalResultKind::Branch, values, &destBlock, nullptr);
+    }
 
     /// Function argument provider callback function.
     ///

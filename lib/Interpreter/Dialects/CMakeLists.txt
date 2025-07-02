@@ -18,3 +18,4 @@
 add_subdirectory(Arith)
 add_subdirectory(Func)
 add_subdirectory(LLVM)
+add_subdirectory(CF)

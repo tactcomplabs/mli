@@ -1,0 +1,11 @@
+if(ENABLE_TESTING)
+	add_mli_test(name_base CF_ASSERT_TRUE subdir assert mli_args "--args=1" regex "Function completed")
+	add_mli_test(name_base CF_ASSERT_FALSE subdir assert mli_args "--args=0" regex "assertion failed" expect_failure TRUE)
+	add_mli_test(name_base CF_BR subdir br regex "returned i32 = 2")
+    add_mli_test(name_base CF_COND_BR_TRUE subdir cond_br mli_args "--args=3,1" regex "returned i64 = 6")
+    add_mli_test(name_base CF_COND_BR_FALSE subdir cond_br mli_args "--args=3,0" regex "returned i64 = 3")
+    add_mli_test(name_base CF_BR_DOMINANCE subdir dominance mli_args "--args=3,0" regex "returned i64 = 6")
+    add_mli_test(name_base CF_SWITCH subdir switch mli_args "--args=3,1" regex "returned i32 = 3")
+    add_mli_test(name_base CF_SWITCH_DEFAULT subdir switch mli_args "--args=42,1" regex "returned i32 = 1")
+endif()
+

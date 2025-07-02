@@ -117,31 +117,19 @@ EvalResult Interpreter::execute(Region& region, ArrayRef<EvalValue> arguments) {
             case EvalResultKind::BindValue: return createErrorResult("region evaluation result must be return or yield");
             case EvalResultKind::ReturnValue:
             case EvalResultKind::YieldValue: return result;
-            case EvalResultKind::Branch: break;
+            case EvalResultKind::Branch:
+            case EvalResultKind::Void: break;
         }
     }
-}
 
-EvalResult Interpreter::execute(Block& block, ArrayRef<EvalValue> arguments) {
-    if ( failed(setEvalValues(ValueRange(block.getArguments()), arguments)) ) {
-        return createErrorResult("number of formal arguments and actual arguments mismatch");
-    }
-
-    for ( auto& op : block ) {
-        EvalResult result = execute(op);
-        switch ( result.getKind() ) {
-            case EvalResultKind::Error: return result;
-            case EvalResultKind::BindValue:
-                {
-                    if ( failed(setEvalValues(ValueRange(op.getResults()), result.getValues())) ) {
-                        return createErrorResult("number of op results mismatch");
-                    }
-                    continue;
-                }
-            case EvalResultKind::ReturnValue:
-            case EvalResultKind::YieldValue:
-            case EvalResultKind::Branch: return result;
+    EvalResult Interpreter::execute(Block & block, ArrayRef<EvalValue> arguments) {
+        if ( failed(setEvalValues(ValueRange(block.getArguments()), arguments)) ) {
+            return createErrorResult("number of formal arguments and actual arguments mismatch");
         }
+        case EvalResultKind::Void: continue;
+        case EvalResultKind::ReturnValue:
+        case EvalResultKind::YieldValue:
+        case EvalResultKind::Branch: return result;
     }
 
     return createErrorResult("block does not end with a terminator op");
