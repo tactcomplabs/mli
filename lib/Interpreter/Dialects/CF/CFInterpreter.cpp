@@ -48,6 +48,13 @@ namespace {
                                                        cf::BranchOp> {
       static EvalResult interpret(Operation *op, Interpreter &interpreter,
                                   ArrayRef<EvalValue> operands) {
+        if (!op->hasSuccessors()) {
+            std::string msg = "Block ";
+            llvm::raw_string_ostream os(msg);
+            op->getBlock()->printAsOperand(os);
+            os << " does not have a successor";
+            return interpreter.createErrorResult(os.str());
+        }                     
         Block* succ = op->getSuccessor(0);
         return interpreter.createBranchResult(*succ, operands);
       }
@@ -59,8 +66,51 @@ namespace {
       static EvalResult interpret(Operation *op, Interpreter &interpreter,
                                   ArrayRef<EvalValue> operands) {
         bool cond = operands[0].getData<bool>().front();
+        if (!op->hasSuccessors()) {
+            std::string msg = "Block ";
+            llvm::raw_string_ostream os(msg);
+            op->getBlock()->printAsOperand(os);
+            os << " does not have a successor";
+            return interpreter.createErrorResult(os.str());
+        }
         Block* succ = op->getSuccessor(!cond); // take first successor if cond is true
-        return interpreter.createBranchResult(*succ, operands);
+
+        // operands has the structure [<cond>, <block1_args>, <block2_args>]
+        // Select the subarray corresponding to the taken block's arguments
+        const unsigned num_args = succ->getNumArguments();
+        unsigned start_idx = cond ? 1 : operands.size() - num_args;
+        return interpreter.createBranchResult(*succ, operands.slice(start_idx, num_args));
+      }
+    };
+
+    struct SwitchOpInterpreter
+        : public InterpreterOpInterface::ExternalModel<SwitchOpInterpreter,
+                                                       cf::SwitchOp> {
+      static EvalResult interpret(Operation *op, Interpreter &interpreter,
+                                  ArrayRef<EvalValue> operands) {
+        auto case_val_attr = op->getAttrOfType<mlir::DenseIntElementsAttr>("case_values");
+        const APInt target = getIntegerData(operands[0]);
+
+        // Iterator for successor blocks to jump to
+        // Skip the first block and its argument list, since that's the default block
+        auto block_it = op->successor_begin();
+        unsigned start_idx = 1 + (*block_it)->getNumArguments();
+        ++block_it; // skip default block for now
+
+        for (const APInt& case_val: case_val_attr) {
+            unsigned current_block_args = (*block_it)->getNumArguments();
+            if (case_val == target) {
+                llvm::outs() << mli::fmt::dim("Taking case: " + mli::fmt::to_string(case_val) + "\n");
+                return interpreter.createBranchResult(**block_it, operands.slice(start_idx, current_block_args));
+            }
+            start_idx += current_block_args;
+            ++block_it; // NOTE: I'm assuming that numSuccessors == numCaseVals, otherwise this may go OOB 
+        }
+
+        // Doesn't match any of the cases, use default
+        llvm::outs() << mli::fmt::dim("Taking default case\n");
+        Block* default_block = op->getSuccessor(0);
+        return interpreter.createBranchResult(*default_block, operands.slice(1, default_block->getNumArguments()));
       }
     };
 
@@ -70,4 +120,5 @@ void CFInterpreter::attachInterface(MLIRContext &context) {
     cf::AssertOp::attachInterface<AssertOpInterpreter>(context);
     cf::BranchOp::attachInterface<BranchOpInterpreter>(context);
     cf::CondBranchOp::attachInterface<CondBranchOpInterpreter>(context);
+    cf::SwitchOp::attachInterface<SwitchOpInterpreter>(context);
 }
