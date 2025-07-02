@@ -1,7 +1,7 @@
 # ===- lib/Interpreter/Dialects/CMakeLists.txt
 #
 #
-# Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+# Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 # All Rights Reserved
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

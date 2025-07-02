@@ -8,6 +8,7 @@ Out-of-Tree Interpreter for executing MLIR code. Based on [work](https://discour
 mkdir build && cd build
 cmake -G Ninja -DLLVM_DIR=/opt/homebrew/opt/llvm@19/lib/cmake/llvm -DMLIR_DIR=/opt/homebrew/opt/llvm@19/lib/cmake/mlir -DCMAKE_EXPORT_COMPILE_COMMANDS=On -DCMAKE_BUILD_TYPE=RelWDebInfo ../ -DCMAKE_INSTALL_PREFIX=/opt/homebrew/opt/llvm@19
 ```
+If you plan on contributing to this repository, we suggest you run `git config core.hooksPath .githooks` after cloning the repository. This sets up the precommit hooks that automatically enforce coding standards.
 
 ## Building Polygeist
 We provide support for [Polygeist](http://polygeist.llvm.org), a C/C++ frontend that can emit MLIR source. This is optional for building `mli`, but is helpful if the user wants to work from C++ source files. Polygeist can be built by:

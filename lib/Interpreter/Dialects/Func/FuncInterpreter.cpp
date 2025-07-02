@@ -6,7 +6,7 @@
 //
 // The remaining portions of this file are:
 //
-// Copyright (C) 2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2024-2025 Tactical Computing Laboratories, LLC
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -32,18 +32,15 @@ using namespace mlir;
 
 namespace {
 
-class ReturnOpInterpreter
-    : public InterpreterOpInterface::ExternalModel<ReturnOpInterpreter,
-                                                   func::ReturnOp> {
-public:
-  static EvalResult interpret(Operation *op, Interpreter &interpreter,
-                              ArrayRef<EvalValue> operands) {
-    return interpreter.createReturnValueResult(operands);
-  }
+class ReturnOpInterpreter : public InterpreterOpInterface::ExternalModel<ReturnOpInterpreter, func::ReturnOp> {
+  public:
+    static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
+        return interpreter.createReturnValueResult(operands);
+    }
 };
 
-} // namespace
+}  // namespace
 
-void FuncInterpreter::attachInterface(MLIRContext &context) {
-  func::ReturnOp::attachInterface<ReturnOpInterpreter>(context);
+void FuncInterpreter::attachInterface(MLIRContext& context) {
+    func::ReturnOp::attachInterface<ReturnOpInterpreter>(context);
 }

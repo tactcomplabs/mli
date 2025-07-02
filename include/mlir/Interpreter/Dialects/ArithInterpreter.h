@@ -1,6 +1,6 @@
 //===- ArithInterpreter.h - Arith dialect interpreter -------------*- C++ -*-===//
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,20 +29,20 @@ namespace mlir {
 
 /// Dialect interpreter for the Arith dialect.
 class ArithInterpreter {
-public:
-  using Dialect = arith::ArithDialect;
-  using Context = void;
+  public:
+    using Dialect = arith::ArithDialect;
+    using Context = void;
 
-  /// Attach the InterpreterOpInterface to the ops in the Func dialect.
-  static void attachInterface(MLIRContext &context);
+    /// Attach the InterpreterOpInterface to the ops in the Func dialect.
+    static void attachInterface(MLIRContext& context);
 
-  /// Create an interpreter context.
-  static Context *createContext() { return nullptr; }
+    /// Create an interpreter context.
+    static Context* createContext() { return nullptr; }
 
-  /// Destroy the interpreter context.
-  static void destroyContext(Context *) {}
+    /// Destroy the interpreter context.
+    static void destroyContext(Context*) {}
 };
 
-} // namespace mlir
+}  // namespace mlir
 
-#endif // MLIR_INTERPRETER_DIALECTS_ARITHINTERPRETER_H_
+#endif  // MLIR_INTERPRETER_DIALECTS_ARITHINTERPRETER_H_
