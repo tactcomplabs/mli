@@ -40,6 +40,7 @@ target_link_libraries(mli
   MLIRControlFlowDialect
   MLIRFuncDialect
   MLIRLLVMDialect
+  MLIRMemRefDialect
   MLIRSupport
   MLIRParser
   MLIRTransforms

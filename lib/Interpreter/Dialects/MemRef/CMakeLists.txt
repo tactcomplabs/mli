@@ -1,4 +1,5 @@
-# ===- include/mlir/CMakeLists.txt
+# ===- lib/Interpreter/Dialects/MemRef/CMakeLists.txt
+#
 #
 # Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -14,30 +15,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-add_subdirectory(Interpreter)
 
-# Build the interpreter library
-add_library(MLIRInterpreter
-  Interpreter.cpp
-  InterpreterOpInterface.cpp
-  Dialects/FuncInterpreter.cpp
-  Dialects/LLVMInterpreter.cpp
-  Dialects/ArithInterpreter.cpp
-  Dialects/CFInterpreter.cpp
-  Dialects/MemRef.cpp
-)
+add_mlir_library(MLIRMemRefInterpreter
+  MemRefInterpreter.cpp
 
-target_include_directories(MLIRInterpreter PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}
-)
+  ADDITIONAL_HEADER_DIRS
+  ${MLIR_MAIN_INCLUDE_DIR}/mlir/Interpreter
 
-target_link_libraries(MLIRInterpreter
-  PRIVATE
-  MLIRIR
-  MLIRFuncDialect
-  MLIRLLVMDialect
-  MLIRArithDialect
-  MLIRControlFlowDialect
-  MLIRMemRefDialect
+  DEPENDS
+  MLIRInterpreterOpInterfaceIncGen
+
+  LINK_LIBS PUBLIC
+  MLIRInterpreter
   MLIRSupport
-)
+  )
+

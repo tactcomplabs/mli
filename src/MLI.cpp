@@ -21,6 +21,7 @@
 #include "mlir/Interpreter/Dialects/CFInterpreter.h"
 #include "mlir/Interpreter/Dialects/FuncInterpreter.h"
 #include "mlir/Interpreter/Dialects/LLVMInterpreter.h"
+#include "mlir/Interpreter/Dialects/MemRefInterpreter.h"
 #include "mlir/Interpreter/Interpreter.h"
 #include "llvm/Support/CommandLine.h"
 
@@ -52,6 +53,7 @@ int main(int argc, char** argv) {
     context.getOrLoadDialect<mlir::func::FuncDialect>();
     context.getOrLoadDialect<mlir::arith::ArithDialect>();
     context.getOrLoadDialect<mlir::cf::ControlFlowDialect>();
+    context.getOrLoadDialect<mlir::memref::MemRefDialect>();
 
     mlir::Interpreter interpreter(context);
 
@@ -60,6 +62,7 @@ int main(int argc, char** argv) {
     interpreter.registerDialectInterpreter<mlir::LLVMInterpreter>();
     interpreter.registerDialectInterpreter<mlir::ArithInterpreter>();
     interpreter.registerDialectInterpreter<mlir::CFInterpreter>();
+    interpreter.registerDialectInterpreter<mlir::MemRefInterpreter>();
 
     // Parse the MLIR file
     auto module = mli::parseMLIRFile(inputFilename, context);
