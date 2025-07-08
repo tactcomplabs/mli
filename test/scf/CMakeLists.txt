@@ -1,0 +1,12 @@
+if(ENABLE_TESTING)
+  add_mli_test(name_base SCF_FOR subdir for function_name "test_for_basic" regex "Function completed")
+  add_mli_test(name_base SCF_FOR_CARRIED_VALUE subdir for function_name "test_for_with_carried_value" regex "success: Function returned i32 = 0")
+  add_mli_test(name_base SCF_WHILE subdir while mli_args "--args=1" regex "success: Function returned \\(i32, i32\\) = \\(10, 45\\)")
+  add_mli_test(name_base SCF_IF subdir if mli_args "--args=1" function_name "test_if_basic" regex "Function returned i1 = 1")
+  add_mli_test(name_base SCF_IF_ELSE subdir if mli_args "--args=1" function_name "test_if_else" regex "Function returned i32 = 1")
+  add_mli_test(name_base SCF_IF_NESTED_0 subdir if mli_args "--args=0,0" function_name "test_if_nested" regex "success: Function returned i32 = 0")
+  add_mli_test(name_base SCF_IF_NESTED_1 subdir if mli_args "--args=0,1" function_name "test_if_nested" regex "success: Function returned i32 = 0")
+  add_mli_test(name_base SCF_IF_NESTED_3 subdir if mli_args "--args=1,0" function_name "test_if_nested" regex "success: Function returned i32 = 1")
+  add_mli_test(name_base SCF_IF_NESTED_2 subdir if mli_args "--args=1,1" function_name "test_if_nested" regex "success: Function returned i32 = 2")
+
+endif()
