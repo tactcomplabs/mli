@@ -121,13 +121,28 @@ struct SCFIfOpInterpreter : public InterpreterOpInterface::ExternalModel<SCFIfOp
         bool    cond   = operands[0].getData<bool>().front();
         Region& region = cond ? ifOp.getThenRegion() : ifOp.getElseRegion();
 
-        EvalResult res = interp.execute(region, {});
+        // When scf.if doesn't produce results, the else block is optional
+        // If the else block is omitted, the first block in ifOp.getElseRegion() has 424967154 args for some reason
+        // Fall through, skipping the call to execute a region
+        if ( !cond && op->getNumResults() == 0 ) {
+            return interp.createVoidResult();
+        }
 
+        EvalResult res = interp.execute(region, {});
+        fmt::printOpName(llvm::outs(), "scf.if end");
+
+        // Propagate any errors from the previous execute call
+        if ( res.getKind() == EvalResultKind::Error ) {
+            return res;
+        }
+        // No results produces => no SSA value to bind
+        if ( op->getNumResults() == 0 ) {
+            return interp.createVoidResult();
+        }
+        // We must have a yield statement in both blocks if we are producing results
         if ( res.getKind() != EvalResultKind::YieldValue ) {
             return interp.createErrorResult("expected yield in scf.if region");
         }
-
-        fmt::printOpName(llvm::outs(), "scf.if end");
         return interp.createBindValueResult(res.getValues());
     }
 };
