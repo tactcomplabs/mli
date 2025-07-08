@@ -160,6 +160,7 @@ struct SCFWhileOpInterpreter : public InterpreterOpInterface::ExternalModel<SCFW
                 return interp.createErrorResult("expected scf.condition from before region");
 
             bool cond = before.getValues()[0].getData<bool>().front();
+            // Condition is false, terminate while loop
             if ( !cond ) {
                 SmallVector<EvalValue, 4> results(before.getValues().begin() + 1, before.getValues().end());
                 return interp.createBindValueResult(results);
