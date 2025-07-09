@@ -135,7 +135,7 @@ struct SCFIfOpInterpreter : public InterpreterOpInterface::ExternalModel<SCFIfOp
         if ( res.getKind() == EvalResultKind::Error ) {
             return res;
         }
-        // No results produces => no SSA value to bind
+        // No results produced => no SSA value to bind
         if ( op->getNumResults() == 0 ) {
             return interp.createVoidResult();
         }
@@ -144,6 +144,48 @@ struct SCFIfOpInterpreter : public InterpreterOpInterface::ExternalModel<SCFIfOp
             return interp.createErrorResult("expected yield in scf.if region");
         }
         return interp.createBindValueResult(res.getValues());
+    }
+};
+
+struct SCFIndexSwitchOpInterpreter : public InterpreterOpInterface::ExternalModel<SCFIndexSwitchOpInterpreter, scf::IndexSwitchOp> {
+    static EvalResult interpret(Operation* op, Interpreter& interp, ArrayRef<EvalValue> operands) {
+        scf::IndexSwitchOp switchOp = cast<scf::IndexSwitchOp>(op);
+        fmt::printOpName(llvm::outs(), "scf.index_switch");
+
+        const intptr_t          target = operands[0].getData<intptr_t>().front();
+        llvm::ArrayRef<int64_t> cases  = switchOp.getCases();
+
+        EvalResult region_result;
+        bool       foundRegion = false;
+        for ( int i = 0; i < cases.size(); i++ ) {
+            if ( cases[i] == target ) {
+                llvm::outs() << mli::fmt::dim("Taking case " + std::to_string(cases[i]) + "\n");
+                mlir::Region& target_region = switchOp.getCaseRegions()[i];
+                region_result               = interp.execute(target_region, operands.slice(1));
+                foundRegion                 = true;
+                break;
+            }
+        }
+
+        // No matches found, use default case
+        if ( !foundRegion ) {
+            llvm::outs() << mli::fmt::dim("Taking default case\n");
+            mlir::Region& target_region = switchOp.getDefaultRegion();
+            region_result               = interp.execute(target_region, operands.slice(1));
+        }
+
+        // Propagate errors from case block
+        if ( region_result.getKind() == EvalResultKind::Error ) {
+            return region_result;
+        }
+        if ( op->getNumResults() == 0 ) {
+            return interp.createVoidResult();
+        }
+        // Ensure case yields a value if operation is expecting a result
+        if ( region_result.getKind() != EvalResultKind::YieldValue ) {
+            return interp.createErrorResult("scf.index_switch case must yield if expecting results");
+        }
+        return interp.createBindValueResult(region_result.getValues());
     }
 };
 
@@ -195,6 +237,7 @@ void SCFInterpreter::attachInterface(MLIRContext& ctx) {
     scf::YieldOp::attachInterface<SCFYieldOpInterpreter>(ctx);
     scf::ForOp::attachInterface<SCFForOpInterpreter>(ctx);
     scf::IfOp::attachInterface<SCFIfOpInterpreter>(ctx);
+    scf::IndexSwitchOp::attachInterface<SCFIndexSwitchOpInterpreter>(ctx);
     scf::WhileOp::attachInterface<SCFWhileOpInterpreter>(ctx);
     scf::ConditionOp::attachInterface<SCFConditionOpInterpreter>(ctx);
 }

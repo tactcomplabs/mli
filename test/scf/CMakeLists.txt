@@ -9,5 +9,6 @@ if(ENABLE_TESTING)
   add_mli_test(name_base SCF_IF_NESTED_1 subdir if mli_args "--args=0,1" function_name "test_if_nested" regex "success: Function returned i32 = 0")
   add_mli_test(name_base SCF_IF_NESTED_3 subdir if mli_args "--args=1,0" function_name "test_if_nested" regex "success: Function returned i32 = 1")
   add_mli_test(name_base SCF_IF_NESTED_2 subdir if mli_args "--args=1,1" function_name "test_if_nested" regex "success: Function returned i32 = 2")
-
+  add_mli_test(name_base SCF_INDEX_SWITCH subdir index_switch mli_args "--args=2" function_name "test_switch_without_yield" regex "result: 2")
+  add_mli_test(name_base SCF_INDEX_SWITCH_YIELD subdir index_switch mli_args "--args=42" function_name "test_switch_with_yield" regex "success: Function returned i32 = 20")
 endif()
