@@ -14,11 +14,6 @@ function(add_mli_test)
                         "and regex arguments.")
   endif()
 
-  # TODO: Maybe add parsing of labels in the future
-  if(NOT test_label)
-    set(test_label "all")
-  endif()
-
   if(test_function_name)
     string(TOUPPER ${test_function_name} function_upper)
     set(mlir_test_name ${test_name_base}_${function_upper})
@@ -84,6 +79,11 @@ function(add_mli_test)
   set(mlir_tool ${MLIR_MLIR_OPT_EXECUTABLE})
   set(mlir_tool_args --emit-bytecode)
 
+  # --- Add label corresponding to dialect ----
+  if(NOT test_label)
+    set(test_label "all;${dir_prefix}")
+  endif()
+
   # --- Define how to generate the .bc file (runs during build) ---
   add_custom_command(
     OUTPUT ${bc_file_abs_path}
@@ -135,7 +135,7 @@ function(add_mli_test)
   )
   set_tests_properties(${bc_test_name} PROPERTIES
     TIMEOUT 60
-    LABELS "${test_label}"
+    LABELS "${test_label};bytecode"
     PASS_REGULAR_EXPRESSION "${test_regex}"
     WILL_FAIL "${test_expect_error}"
   )
