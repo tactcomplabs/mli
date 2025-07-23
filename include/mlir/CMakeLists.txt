@@ -37,5 +37,6 @@ target_link_libraries(MLIRInterpreter
   MLIRLLVMDialect
   MLIRArithDialect
   MLIRControlFlowDialect
+  MLIRSCFDialect
   MLIRSupport
 )

@@ -40,6 +40,7 @@ target_link_libraries(mli
   MLIRControlFlowDialect
   MLIRFuncDialect
   MLIRLLVMDialect
+  MLIRSCFDialect
   MLIRSupport
   MLIRParser
   MLIRTransforms
@@ -54,13 +55,13 @@ target_link_libraries(mli
 add_dependencies(mli MLIRInterpreterOpInterfaceIncGen)
 
 if(APPLE)
-    set_target_properties(
+  set_target_properties(
         mli
         PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE
                    INSTALL_RPATH "@executable_path/../lib"
                    INSTALL_NAME_DIR "@executable_path/../lib")
 else()
-    set_target_properties(mli PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE INSTALL_RPATH "$ORIGIN/../lib")
+  set_target_properties(mli PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE INSTALL_RPATH "$ORIGIN/../lib")
 endif()
 # Install the executable
 install(TARGETS mli RUNTIME DESTINATION bin)
