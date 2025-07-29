@@ -27,6 +27,8 @@
 #include <string>
 #include <vector>
 
+#include "MLIFormat.h"
+
 namespace mlir {
 
 class MemoryManager {
@@ -50,6 +52,15 @@ class SimpleMemoryManager : public MemoryManager {
         Mem.resize(initialSize, 0);
         freeBlocks = {std::make_pair(0, initialSize)};
         next       = freeBlocks.begin();
+    }
+
+    ~SimpleMemoryManager() {
+        if ( allocations.empty() )
+            return;
+        llvm::errs() << mli::fmt::warning("Failed to free allocations\n");
+        for ( auto it = allocations.begin(); it != allocations.end(); ++it ) {
+            llvm::errs() << " - address " << it->first << " with size " << it->second.size << "\n";
+        }
     }
 
     /// Allocate 'size' bytes. We return an offset (uint64_t) into our single buffer.
@@ -81,6 +92,9 @@ class SimpleMemoryManager : public MemoryManager {
     /// Remove allocation associated with addr from map
     /// Also reclaims freed memory for future allocations
     void free(uint64_t addr) override {
+        if ( allocations.find(addr) == allocations.end() ) {
+            throw std::runtime_error("SimpleMemoryManager: address not associated with allocation");
+        }
         uint64_t freedSize = allocations[addr].size;
         allocations.erase(addr);
 

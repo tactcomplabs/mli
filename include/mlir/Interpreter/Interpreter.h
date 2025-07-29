@@ -138,7 +138,7 @@ class Interpreter {
     //===--------------------------------------------------------------------===//
 
     /// Get the MLIR context.
-    MLIRContext& getContext() { return *context; }
+    MLIRContext* getContext() { return context; }
 
     /// Get the ModuleOp.
     ModuleOp getModule() { return module; }
@@ -296,6 +296,15 @@ class Interpreter {
 
     // TODO: Change to smart pointer
     MemoryManager& getMemManager() { return *MemManager; }
+
+    // Wrappers for MemoryManager's operations
+    uint64_t allocateInMemManager(const size_t size) { return MemManager->allocate(size); }
+
+    void freeInMemManager(const uint64_t addr) { MemManager->free(addr); }
+
+    void readFromMemManager(const uint64_t addr, void* dst, const size_t size) const { MemManager->read(addr, dst, size); }
+
+    void writeToMemManager(const uint64_t addr, const void* src, const size_t size) { MemManager->write(addr, src, size); }
 
   private:
     /// Mapping from SSA names to evaluated value. This represents a value lookup

@@ -23,6 +23,7 @@
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/Casting.h"
+#include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
 #include <cassert>
 #include <functional>
@@ -35,183 +36,177 @@
 // These can be standard arrays, tensors, or memrefs
 namespace mli {
 
-// LLVM requires some boilerplate for its RTTI
-// Provide kinds for use in classof()
-// NOTE: We must have a kind for every type T we expect in the array
-// Right now, we just have bool, integer, float, and index
-// If we want/need more, they'll have to be added as kinds
-enum MultiArrayKind { BoolKind, IntegerKind, FloatKind, IndexKind };
+// LLVM RTTI requires a class to provide a "kind" for distinguishing a subclass
+// Right now, the MultiArray class isn't extended from some base virtual class
+// However, this is more ergonomic than storing the mlir::Type, since we can just switch over an enum
+// This also hides some idiosyncracies related to type implementation (e.g bool = 1 bit integer, )
+enum MultiArrayKind : uint8_t { BoolKind, IntegerKind, FloatKind, IndexKind, UnknownKind };
 
-class MultiArrayBase {
-  protected:
-    MultiArrayKind          kind;
-    virtual MultiArrayBase* clone_impl() const = 0;
-
-  public:
-    virtual ~MultiArrayBase()                               = default;
-    virtual void reshape(llvm::ArrayRef<intptr_t> new_dims) = 0;
-    virtual void print() const                              = 0;
-
-    MultiArrayKind getKind() const { return kind; }
-
-    auto clone() const { return std::unique_ptr<MultiArrayBase>(clone_impl()); }
-};
-
-template<typename T>
-class MultiArrayImpl : public MultiArrayBase {
-  private:
-    llvm::SmallVector<intptr_t> dims;
-    std::vector<T>              arr;
-    intptr_t                    total_elems;
-
-  protected:
-    virtual MultiArrayImpl* clone_impl() const override { return new MultiArrayImpl(*this); }
-
-  public:
-    ~MultiArrayImpl() override = default;
-
-    // Default constructor for when T has a default constructor
-    MultiArrayImpl(llvm::ArrayRef<intptr_t> init_dims) : dims(init_dims) {
-        total_elems = std::accumulate(dims.begin(), dims.end(), 1, std::multiplies<intptr_t>());
-        arr.reserve(total_elems);
-        if constexpr ( std::is_same_v<T, bool> ) {
-            kind = BoolKind;
-        }
-        kind = IndexKind;  // TODO: Is this a good idea for the default?
-    };
-
-    // Constructor for when T = APInt
-    // This must be handled separately, since there's extra information that needs to be passed to the APInt ctr
-    template<typename U = T, typename std::enable_if_t<std::is_same_v<U, llvm::APInt>, int> = 0>
-    MultiArrayImpl(llvm::ArrayRef<intptr_t> init_dims, const unsigned width) : dims(init_dims) {
-        total_elems = std::accumulate(dims.begin(), dims.end(), 1, std::multiplies<intptr_t>());
-        arr.assign(total_elems, llvm::APInt(width, 0));
-        kind = IntegerKind;
-    }
-
-    // Constructor for when T = APFloat
-    // This must be handled separately, since there's extra information that needs to be passed to the APFloat ctr
-    template<typename U = T, typename std::enable_if_t<std::is_same_v<U, llvm::APFloat>, int> = 0>
-    MultiArrayImpl(llvm::ArrayRef<intptr_t> init_dims, const llvm::APFloatBase::Semantics& s) : dims(init_dims) {
-        total_elems = std::accumulate(dims.begin(), dims.end(), 1, std::multiplies<intptr_t>());
-        arr.assign(total_elems, llvm::APFloat(llvm::APFloatBase::EnumToSemantics(s)));
-        kind = FloatKind;
-    }
-
-    T& at(llvm::ArrayRef<intptr_t> indices) {
-        intptr_t idx    = 0;
-        intptr_t stride = 1;
-        assert(indices.size() == dims.size() && "Incorrect number of indices supplied");
-        for ( int i = dims.size() - 1; i >= 0; i-- ) {
-            assert(indices[i] < dims[i] && "Index out of range");
-            idx += indices[i] * stride;
-            stride *= dims[i];
-        }
-        return arr.at(idx);
-    }
-
-    const T& at(llvm::ArrayRef<intptr_t> indices) const {
-        intptr_t idx    = 0;
-        intptr_t stride = 1;
-        assert(indices.size() == dims.size() && "Incorrect number of indices supplied");
-        for ( int i = dims.size() - 1; i >= 0; i-- ) {
-            assert(indices[i] < dims[i] && "Index out of range");
-            idx += indices[i] * stride;
-            stride *= dims[i];
-        }
-        return arr.at(idx);
-    }
-
-    void reshape(llvm::ArrayRef<intptr_t> new_dims) override {
-        intptr_t new_total = std::accumulate(new_dims.begin(), new_dims.end(), 1, std::multiplies<intptr_t>());
-        if ( new_total != total_elems ) {
-            throw std::runtime_error("New shape has different number of elements compared to old shape");
-        }
-        dims.append(new_dims.begin(), new_dims.end());
-    }
-
-    void print() const override {
-        if ( arr.empty() ) {
-            llvm::outs() << "[]\n";
-            return;
-        }
-        llvm::outs() << "[";
-        for ( int i = 1; i < total_elems - 1; i++ ) {
-            llvm::outs() << arr[i] << ", ";
-        }
-        llvm::outs() << arr[total_elems - 1] << "]\n";
-    }
-
-    static bool classof(const MultiArrayBase* base) {
-        if constexpr ( std::is_same_v<T, bool> ) {
-            return base->getKind() == BoolKind;
-        }
-        if constexpr ( std::is_same_v<T, intptr_t> ) {
-            return base->getKind() == IndexKind;
-        }
-        if constexpr ( std::is_same_v<T, llvm::APInt> ) {
-            return base->getKind() == IntegerKind;
-        }
-        if constexpr ( std::is_same_v<T, llvm::APFloat> ) {
-            return base->getKind() == FloatKind;
-        }
-        return false;  // unrecognized type for T
-    }
-};
+static constexpr size_t kind_sizes[5] = {1, sizeof(llvm::APInt), sizeof(llvm::APFloat), sizeof(intptr_t), 1};
 
 class MultiArray {
-    std::unique_ptr<MultiArrayBase> impl;
+    std::vector<char>    buff;
+    std::vector<int64_t> dims;
+    int64_t              total_elems;
+    MultiArrayKind       elem_kind = UnknownKind;
 
   public:
     // Rule of 5
-    MultiArray()  = default;
-
-    ~MultiArray() = default;
-
-    MultiArray(const MultiArray& other) : impl(other.impl->clone()) {}
-
-    MultiArray& operator=(const MultiArray& other) {
-        impl = other.impl->clone();
-        return *this;
-    }
-
+    MultiArray()                              = default;
+    ~MultiArray()                             = default;
+    MultiArray& operator=(MultiArray& other)  = default;
     MultiArray(MultiArray&& other)            = default;
     MultiArray& operator=(MultiArray&& other) = default;
 
-    // Custom constructor
-    MultiArray(const mlir::Type elem_type, llvm::ArrayRef<intptr_t> dims) {
-        if ( elem_type.isIndex() ) {
-            impl = std::make_unique<MultiArrayImpl<intptr_t>>(dims);
-        }
-        else if ( elem_type.isInteger() ) {
-            unsigned width = elem_type.getIntOrFloatBitWidth();
-            impl           = std::make_unique<MultiArrayImpl<llvm::APInt>>(dims, width);
-        }
-        else if ( elem_type.isIntOrFloat() ) {  // is a float
-            llvm::APFloat::Semantics s = getFloatSemantics(elem_type);
-            impl                       = std::make_unique<MultiArrayImpl<llvm::APFloat>>(dims, s);
-        }
+    // Default constructor
+    MultiArray(const mlir::Type t, llvm::ArrayRef<int64_t> new_dims) {
+        dims.assign(new_dims.begin(), new_dims.end());
+        total_elems = std::accumulate(dims.begin(), dims.end(), 1, std::multiplies<intptr_t>());
+        elem_kind   = getKindFromType(t);
+        buff.resize(kind_sizes[elem_kind] * total_elems);
+        buff[0] = 'a';
+    }
+
+    // Restore from raw data
+    void restore(const mlir::Type t, const char* raw_data, const size_t size_in_bytes, llvm::ArrayRef<int64_t> new_dims) {
+        dims.assign(new_dims.begin(), new_dims.end());
+        buff.assign(raw_data, raw_data + size_in_bytes);
+        elem_kind = getKindFromType(t);
     }
 
     template<typename T>
     T& at(llvm::ArrayRef<intptr_t> indices) {
-        if ( auto ptr = llvm::dyn_cast<MultiArrayImpl<T>>(impl.get()) ) {
-            return ptr->at(indices);
+        intptr_t idx    = 0;
+        intptr_t stride = 1;
+        assert(buff.size() % sizeof(T) == 0);
+        T* typed_arr = reinterpret_cast<T*>(buff.data());
+        assert(indices.size() == dims.size() && "Incorrect number of indices supplied");
+        for ( int i = dims.size() - 1; i >= 0; i-- ) {
+            assert(indices[i] < dims[i] && "Index out of range");
+            idx += indices[i] * stride;
+            stride *= dims[i];
         }
-        throw std::bad_cast();
+        return typed_arr[idx];
     }
 
     template<typename T>
     const T& at(const llvm::ArrayRef<intptr_t> indices) const {
-        if ( auto ptr = llvm::dyn_cast<MultiArrayImpl<T>>(impl.get()) ) {
-            return ptr->at(indices);
+        intptr_t idx    = 0;
+        intptr_t stride = 1;
+        assert(buff.size() % sizeof(T) == 0);
+        const T* typed_arr = reinterpret_cast<const T*>(buff.data());
+        assert(indices.size() == dims.size() && "Incorrect number of indices supplied");
+        for ( int i = dims.size() - 1; i >= 0; i-- ) {
+            assert(indices[i] < dims[i] && "Index out of range");
+            idx += indices[i] * stride;
+            stride *= dims[i];
         }
-        throw std::bad_cast();
+        return typed_arr[idx];
     }
 
-    void reshape(llvm::ArrayRef<intptr_t> new_dims) { return impl->reshape(new_dims); }
+    void reshape(llvm::ArrayRef<int64_t> new_dims) {
+        intptr_t new_total = std::accumulate(new_dims.begin(), new_dims.end(), 1, std::multiplies<intptr_t>());
+        if ( new_total != total_elems ) {
+            throw std::runtime_error("New shape has different number of elements compared to old shape");
+        }
+        dims.assign(new_dims.begin(), new_dims.end());
+    }
 
-    void print() const { return impl->print(); }
+    void print() const {
+        if ( total_elems == 0 ) {
+            llvm::outs() << "[]\n";
+            return;
+        }
+        switch ( elem_kind ) {
+            case BoolKind: print_helper<char>(); break;
+            case IntegerKind: print_helper<llvm::APInt>(); break;
+            case FloatKind: print_helper<llvm::APFloat>(); break;
+            case IndexKind: print_helper<intptr_t>(); break;
+            default: llvm_unreachable("Unrecognized element type");
+        }
+    }
+
+    // MultiArray isn't trivially copyable, so we can't directly attach it to an EvalValue
+    // We opt to serialize into raw bytes as a workaround
+    struct MultiArrayMetadata {
+        int64_t        total_elems;
+        MultiArrayKind elem_kind;
+        uint64_t       buff_offset;  // start of data buffer
+        uint64_t       buff_size;    // sizeof(buff)
+        uint64_t       dims_offset;  // start of dims array
+        uint64_t       dims_size;    // sizeof(dims)
+    };
+
+    std::vector<char> serialize() const {
+        // We'll create the buffer with the following contiguous structure:
+        // [header_metadata, buff, dims]
+        // where the header data tells us how to restore the buff and dims vectors
+        MultiArrayMetadata header;
+        header.total_elems = total_elems;
+        header.elem_kind   = elem_kind;
+
+        // Calculate offset for buff vector
+        header.buff_offset = sizeof(header);
+        header.buff_size   = buff.size();
+
+        // Calculate offset for dims vector
+        header.dims_offset = header.buff_offset + header.buff_size;
+        header.dims_size   = dims.size() * sizeof(int64_t);
+
+        // Store everything into bytes vector
+        std::vector<char> bytes(header.dims_offset + header.dims_size);
+        std::memcpy(bytes.data(), &header, sizeof(header));
+        std::memcpy(bytes.data() + header.buff_offset, buff.data(), header.buff_size);
+        std::memcpy(bytes.data() + header.dims_offset, dims.data(), header.dims_size);
+        return bytes;
+    }
+
+    // Deserialize from raw bytes
+    // Requires bytes to be in the format specified by serialize()
+    void deserialize(const char* bytes, const size_t size) {
+        assert(size >= sizeof(MultiArrayMetadata) && "bytes array is too small!");
+        const auto* header     = reinterpret_cast<const MultiArrayMetadata*>(bytes);
+
+        // Find where the data buffer is
+        const char* buff_start = bytes + header->buff_offset;
+        buff.assign(buff_start, buff_start + header->buff_size);
+
+        // Find where the dimension vector is
+        const int64_t* dims_start = reinterpret_cast<const int64_t*>(bytes + header->dims_offset);
+        dims.assign(dims_start, dims_start + header->dims_size / sizeof(int64_t));
+
+        // Restore other primitives
+        elem_kind   = header->elem_kind;
+        total_elems = header->total_elems;
+    }
+
+  private:
+    template<typename T>
+    void print_helper() const {
+        assert(buff.size() % sizeof(T) == 0);
+        const T* typed_arr = reinterpret_cast<const T*>(buff.data());
+        llvm::outs() << "[";
+        for ( int i = 0; i < total_elems - 1; i++ ) {
+            llvm::outs() << typed_arr[i] << ", ";
+        }
+        llvm::outs() << typed_arr[total_elems - 1] << "]\n";
+    }
+
+    MultiArrayKind getKindFromType(const mlir::Type t) const {
+        if ( t.isInteger(1) ) {  // 1 bit integer => bool
+            return BoolKind;
+        }
+        if ( llvm::isa<mlir::IntegerType>(t) ) {
+            return IntegerKind;
+        }
+        if ( llvm::isa<mlir::FloatType>(t) ) {
+            return FloatKind;
+        }
+        if ( llvm::isa<mlir::IndexType>(t) ) {
+            return IndexKind;
+        }
+        return UnknownKind;
+    }
 };
 
 }  // namespace mli
