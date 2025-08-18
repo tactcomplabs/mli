@@ -219,9 +219,32 @@ class MultiArray {
         size_t                   num_elems = size / sizeof(T);
 
         for ( size_t i = 0; i < num_elems - 1; i++ ) {
+// Older versions of LLVM do not overload the << operator for APFloat
+// Detect this at compile-time and figure out how to print
+#if NEW_LLVM
             os << typed_arr[i] << ", ";
+#else
+            if constexpr ( std::is_same_v<T, llvm::APFloat> ) {
+                typed_arr[i].print(os);
+                os << ", ";
+            }
+            else {
+                os << typed_arr[i] << ", ";
+            }
+#endif
         }
+#if NEW_LLVM
         os << typed_arr[num_elems - 1] << "]";
+#else
+        if constexpr ( std::is_same_v<T, llvm::APFloat> ) {
+            typed_arr[num_elems - 1].print(os);
+            os << "]";
+        }
+        else {
+            os << typed_arr[num_elems - 1] << "]";
+        }
+#endif
+
         return os.str();
     }
 
