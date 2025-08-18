@@ -1,0 +1,4 @@
+func.func @main(%0: index, %1: index) {
+	%arr = memref.alloca(%0, %1) : memref<?x?xi32>
+	func.return
+}

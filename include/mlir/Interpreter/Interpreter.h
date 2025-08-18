@@ -304,7 +304,9 @@ class Interpreter {
 
     void readFromMemManager(const uint64_t addr, void* dst, const size_t size) const { MemManager->read(addr, dst, size); }
 
-    void writeToMemManager(const uint64_t addr, const void* src, const size_t size) { MemManager->write(addr, src, size); }
+    void writeToMemManager(const uint64_t addr, const void* src, const size_t size) const { MemManager->write(addr, src, size); }
+
+    void copyInMemManager(const uint64_t src, const uint64_t dst, const size_t size) const { MemManager->copy(src, dst, size); }
 
   private:
     /// Mapping from SSA names to evaluated value. This represents a value lookup

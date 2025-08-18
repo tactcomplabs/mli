@@ -1,4 +1,6 @@
 if (ENABLE_TESTING)
   add_executable(memManager testMemory.cpp)
+  llvm_map_components_to_libnames(LLVM_LIBS Support)
+  target_link_libraries(memManager PRIVATE ${LLVM_LIBS})
   add_test(NAME MEM_MANAGER COMMAND memManager PASS_REGULAR_EXPRESSION "SUCCESS")
 endif()

@@ -33,11 +33,12 @@ namespace mlir {
 
 class MemoryManager {
   public:
-    virtual ~MemoryManager()                                            = default;
-    virtual uint64_t allocate(size_t size)                              = 0;
-    virtual void     free(uint64_t addr)                                = 0;
-    virtual void     read(uint64_t addr, void* dst, size_t size)        = 0;
-    virtual void     write(uint64_t addr, const void* src, size_t size) = 0;
+    virtual ~MemoryManager()                                                   = default;
+    virtual uint64_t allocate(size_t size)                                     = 0;
+    virtual void     free(uint64_t addr)                                       = 0;
+    virtual void     read(uint64_t addr, void* dst, size_t size)               = 0;
+    virtual void     write(uint64_t addr, const void* src, size_t size)        = 0;
+    virtual void     copy(const uint64_t src, const uint64_t dst, size_t size) = 0;
 };
 
 /// TODO: Move to another file maybe?
@@ -159,6 +160,17 @@ class SimpleMemoryManager : public MemoryManager {
             throw std::runtime_error("SimpleMemoryManager: write out of bounds");
 
         std::memcpy(&Mem[addr], src, size);
+    }
+
+    /// Copy 'size' bytes from address 'src' to address 'dst'
+    /// Performs simple bounds checking
+    void copy(const uint64_t src, const uint64_t dst, size_t size) override {
+        auto [allocStart, allocInfo] = findAllocation(src);
+        // Ensure the entire write fits within [allocStart, allocStart + allocSize)
+        if ( src + size > allocStart + allocInfo.size ) {
+            throw std::runtime_error("SimpleMemoryManager: copy out of bounds");
+        }
+        std::memcpy(&Mem[dst], &Mem[src], size);
     }
 
   private:

@@ -50,6 +50,7 @@ static mlir::SmallVector<mlir::EvalValue, 4> prepareArguments(
     mlir::SmallVector<mlir::EvalValue, 4> functionArgs;
     auto&                                 entryBlock = func.getBody().front();
 
+    assert(args.size() == entryBlock.getNumArguments() && "Number of CLI arguments and block arguments differ");
     // Convert command-line arguments to EvalValues
     for ( size_t i = 0; i < args.size(); ++i ) {
         auto arg_type = entryBlock.getArgument(i).getType();
