@@ -306,6 +306,10 @@ class Interpreter {
 
     void writeToMemManager(const uint64_t addr, const void* src, const size_t size) const { MemManager->write(addr, src, size); }
 
+    void forceWriteToMemManager(const uint64_t addr, const void* src, const size_t size) const {
+        MemManager->force_write(addr, src, size);
+    }
+
     void copyInMemManager(const uint64_t src, const uint64_t dst, const size_t size) const { MemManager->copy(src, dst, size); }
 
   private:

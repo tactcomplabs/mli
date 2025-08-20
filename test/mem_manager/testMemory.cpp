@@ -9,37 +9,49 @@ using namespace mlir;
 // We need to test if consolidating adjacent free blocks works
 // Do this by testing if we can allocate a region spanning the width of combined blocks
 // Throws an uncaught exception if allocate's exception and throwException disagree
-uint64_t testAlloc(SimpleMemoryManager& mem, const uint64_t size, bool throwException = false) {
-    uint64_t addr;
+void testAlloc(SimpleMemoryManager& mem, const uint64_t size, bool throwException = false) {
+    uint64_t id;
     try {
-        addr = mem.allocate(size);
+        id = mem.allocate(size);
         // alloc doesn't throw exception, determine if this is good or bad
         if ( throwException )
             throw std::runtime_error("No exception thrown!");
-        mem.free(addr);
+        mem.free(id);
     } catch ( std::exception& e ) {
         // Throw a second exception if the test fails
         if ( !throwException || std::string(e.what()) == "No exception thrown" )
             throw std::exception();
     }
-    return addr;
+}
+
+void testRealloc(SimpleMemoryManager& mem, const uint64_t id, const uint64_t new_size, bool throwException = false) {
+    try {
+        mem.realloc(id, new_size);
+        // realloc doesn't throw exception, determine if this is good or bad
+        if ( throwException )
+            throw std::runtime_error("No exception thrown!");
+    } catch ( std::exception& e ) {
+        // Throw a second exception if the test fails
+        if ( !throwException || std::string(e.what()) == "No exception thrown" )
+            throw std::exception();
+    }
 }
 
 // Set up memory manager to model each of the four removal scenarios
 void prepareMemManager(SimpleMemoryManager& mem, const uint64_t* blockSizes, bool openLeft, bool openRight) {
-    uint64_t addresses[NUM_BLOCKS];
+    uint64_t alloc_ids[NUM_BLOCKS];
 
     for ( int i = 0; i < NUM_BLOCKS; i++ ) {
-        addresses[i] = mem.allocate(blockSizes[i]);
+        alloc_ids[i] = mem.allocate(blockSizes[i]);
     }
 
     if ( openLeft )
-        mem.free(addresses[0]);
+        mem.free(alloc_ids[0]);
     if ( openRight )
-        mem.free(addresses[2]);
+        mem.free(alloc_ids[2]);
 }
 
-int main() {
+void runAllocTests() {
     const uint64_t memSize                = 100;
     const uint64_t blockSizes[NUM_BLOCKS] = {20, 50, 30};
 
@@ -59,36 +71,55 @@ int main() {
     SimpleMemoryManager mem4 = SimpleMemoryManager(memSize);
     prepareMemManager(mem4, &blockSizes[0], true, true);
 
-    const uint64_t middleAddr = 20;
+    const uint64_t middle_id = 1;
 
     // Case I
-    mem1.free(middleAddr);
-    assert(testAlloc(mem1, blockSizes[1], false) == middleAddr && "MemManager can't reclaim freed block");
-    testAlloc(mem1, memSize, true);  // should fail, not enough space
+    mem1.free(middle_id);
+    testAlloc(mem1, blockSizes[1], false);  // should succeed, use original block
+    testAlloc(mem1, memSize, true);         // should fail, not enough space
 
     // Case II
-    mem2.free(middleAddr);
-    assert(testAlloc(mem2, blockSizes[1], false) == middleAddr && "MemManager can't reclaim freed block");
-    assert(
-        testAlloc(mem2, blockSizes[1] + blockSizes[2], false) == middleAddr &&
-        "MemManager can't consolidate block with right neighbor"
-    );
-    testAlloc(mem2, memSize, true);  // should fail, not enough space
+    mem2.free(middle_id);
+    testAlloc(mem2, blockSizes[1], false);                  // should succeed, reclaim block 1
+    testAlloc(mem2, blockSizes[1] + blockSizes[2], false);  // should succeed, reclaim block 1+2
+    testAlloc(mem2, memSize, true);                         // should fail, not enough space
 
     // Case III
-    mem3.free(middleAddr);
-    assert(testAlloc(mem3, blockSizes[1], false) == middleAddr - blockSizes[0] && "MemManager can't reclaim freed block");
-    assert(
-        testAlloc(mem3, blockSizes[0] + blockSizes[1], false) == middleAddr - blockSizes[0] &&
-        "MemManager can't consolidate block with left neighbor"
-    );
-    testAlloc(mem3, memSize, true);  // should fail, not enough space
+    mem3.free(middle_id);
+    testAlloc(mem3, blockSizes[1], false);                  // should succeed, reclaim block 0
+    testAlloc(mem3, blockSizes[0] + blockSizes[1], false);  // should succeed, reclaim block 0+1
+    testAlloc(mem3, memSize, true);                         // should fail, not enough space
 
     // Case IV
-    mem4.free(middleAddr);
-    assert(testAlloc(mem4, blockSizes[1], false) == 0 && "MemManager can't reclaim freed block");
-    assert(testAlloc(mem4, memSize, false) == 0 && "MemManager can't consolidate block with both neighbors");
+    mem4.free(middle_id);
+    testAlloc(mem4, blockSizes[1], false);
+    testAlloc(mem4, memSize, false);
+}
 
+void runReallocTests() {
+    const uint64_t memSize                = 100;
+    const uint64_t blockSizes[NUM_BLOCKS] = {20, 50, 30};
+
+    // Case I: New size is less than old size, no copy
+    SimpleMemoryManager mem1              = SimpleMemoryManager(memSize);
+    uint64_t            id_1              = mem1.allocate(blockSizes[0]);
+    testRealloc(mem1, id_1, 10, false);  //
+
+    // Case II: New size is larger, merge with neighbor block, no copy
+    SimpleMemoryManager mem2 = SimpleMemoryManager(memSize);
+    uint64_t            id_2 = mem2.allocate(blockSizes[0]);
+    testRealloc(mem2, id_2, 30, false);
+
+    // Case III: New size is larger, can't merge with neighbor, must copy to new addr
+    SimpleMemoryManager mem3 = SimpleMemoryManager(memSize);
+    uint64_t            id_3 = mem3.allocate(blockSizes[0]);
+    mem3.allocate(blockSizes[1]);
+    testRealloc(mem3, id_3, blockSizes[2], false);
+}
+
+int main() {
+    runAllocTests();
+    runReallocTests();
     std::cout << "SUCCESS" << std::endl;
     return 0;
 }

@@ -33,12 +33,17 @@ namespace mlir {
 
 class MemoryManager {
   public:
-    virtual ~MemoryManager()                                                   = default;
-    virtual uint64_t allocate(size_t size)                                     = 0;
-    virtual void     free(uint64_t addr)                                       = 0;
-    virtual void     read(uint64_t addr, void* dst, size_t size)               = 0;
-    virtual void     write(uint64_t addr, const void* src, size_t size)        = 0;
-    virtual void     copy(const uint64_t src, const uint64_t dst, size_t size) = 0;
+    using AllocID = uint64_t;
+
+  public:
+    virtual ~MemoryManager()                                                 = default;
+    virtual AllocID allocate(size_t size)                                    = 0;
+    virtual void    free(AllocID addr)                                       = 0;
+    virtual void    read(AllocID addr, void* dst, size_t size) const         = 0;
+    virtual void    write(AllocID addr, const void* src, size_t size)        = 0;
+    virtual void    copy(const AllocID src, const uint64_t dst, size_t size) = 0;
+    virtual void    realloc(const AllocID src, const size_t new_size)        = 0;
+    virtual void    force_write(AllocID addr, const void* src, size_t size)  = 0;
 };
 
 /// TODO: Move to another file maybe?
@@ -51,72 +56,57 @@ class SimpleMemoryManager : public MemoryManager {
     explicit SimpleMemoryManager(size_t initialSize = 1024 * 1024) {
         // Pre-allocate our contiguous memory space
         Mem.resize(initialSize, 0);
-        freeBlocks = {std::make_pair(0, initialSize)};
-        next       = freeBlocks.begin();
+        freeBlocks.push_back({0, initialSize});
+        next = freeBlocks.begin();
     }
 
     ~SimpleMemoryManager() {
         if ( allocations.empty() )
             return;
         llvm::errs() << mli::fmt::warning("Failed to free allocations\n");
-        for ( auto it = allocations.begin(); it != allocations.end(); ++it ) {
-            llvm::errs() << " - address " << it->first << " with size " << it->second.size << "\n";
+        for ( const auto& [id, alloc] : allocations ) {
+            llvm::errs() << " - address " << id << " with size " << alloc.size << "\n";
         }
     }
 
     /// Allocate 'size' bytes. We return an offset (uint64_t) into our single buffer.
     /// Throws std::bad_alloc if we can't fit the allocation.
-    uint64_t allocate(size_t size) override {
-        // Keep track of first examined block
-        auto oldNext = next;
-        do {
-            if ( next->second >= size ) {
-                // Current block is large enough for allocation
-                uint64_t   addr = next->first;
-                Allocation allocInfo;
-                allocInfo.size    = size;
-                allocations[addr] = allocInfo;
+    AllocID allocate(size_t size) override {
+        FreeBlock& new_block = findAvailableBlock(size);
+        Allocation alloc     = {size, new_block.base_addr, next_alloc_id};
 
-                // Update block to reflect allocation
-                next->first += size;
-                next->second -= size;
-                return addr;
-            }
-            // Advance list, circling back if at end
-            next = ++next == freeBlocks.end() ? freeBlocks.begin() : next;
-        } while ( next != oldNext );
+        // Adjust free block dimensions
+        new_block.size -= size;
+        new_block.base_addr += size;
 
-        // We've traversed all available blocks, and none are large enough
-        throw std::bad_alloc();
+        allocations[next_alloc_id++] = alloc;
+        return alloc.alloc_id;
     }
 
     /// Remove allocation associated with addr from map
     /// Also reclaims freed memory for future allocations
-    void free(uint64_t addr) override {
-        if ( allocations.find(addr) == allocations.end() ) {
-            throw std::runtime_error("SimpleMemoryManager: address not associated with allocation");
-        }
-        uint64_t freedSize = allocations[addr].size;
-        allocations.erase(addr);
+    void free(AllocID alloc_id) override {
+        Allocation& alloc     = findAllocation(alloc_id);
+        uint64_t    freedSize = alloc.size;
+        uint64_t    addr      = alloc.base_addr;
+        allocations.erase(alloc_id);
 
         // Consolidate blocks by reclaiming freed memory
         // Find supremum/infimum of freed block located at addr
         // (i.e. closest available blocks on either side of freed block)
-        auto right = std::upper_bound(
-            freeBlocks.begin(), freeBlocks.end(), addr, [](const uint64_t a, const std::pair<uint64_t, uint64_t>& b) {
-                return a < b.first;
-            }
-        );
+        auto right     = std::upper_bound(freeBlocks.begin(), freeBlocks.end(), addr, [](const uint32_t a, const FreeBlock& b) {
+            return a < b.base_addr;
+        });
         auto left      = std::prev(right);
 
         // Test if the adjacent blocks of the freed block are available
         // This determines how the blocks can be consolidated
-        bool openLeft  = left->first + left->second == addr;
-        bool openRight = right->first == addr + freedSize;
+        bool openLeft  = left->base_addr + left->size == addr;
+        bool openRight = right->base_addr == addr + freedSize;
 
         if ( openLeft && openRight ) {
             // Case I: Incorporate both the freed block and right into left
-            left->second += (freedSize + right->second);
+            left->size += (freedSize + right->size);
             // The right pointer is now redundant, so we can delete it
             // Ensure that next != right to prevent dangling pointer
             if ( next == right ) {
@@ -126,91 +116,153 @@ class SimpleMemoryManager : public MemoryManager {
         }
         else if ( openLeft && !openRight ) {
             // Case II: Incorporate the freed block into left
-            left->second += freedSize;
+            left->size += freedSize;
         }
         else if ( !openLeft && openRight ) {
             // Case III: Incorporate the freed block into right
-            right->first = addr;
-            right->second += freedSize;
+            right->base_addr = addr;
+            right->size += freedSize;
         }
         else {
             // Case IV: Bookended by allocated memory, create new entry between left and right
-            auto newBlock = std::make_pair(addr, freedSize);
+            FreeBlock newBlock = {addr, freedSize};
             freeBlocks.insert(right, newBlock);
         }
     }
 
     /// Read 'size' bytes from address 'addr' into 'dst'.
     /// Performs simple bounds checking against our recorded allocations.
-    void read(uint64_t addr, void* dst, size_t size) override {
-        auto [allocStart, allocInfo] = findAllocation(addr);
+    void read(AllocID alloc_id, void* dst, size_t size) const override {
+        const Allocation& alloc = findAllocation(alloc_id);
         // Ensure the entire read fits within [allocStart, allocStart + allocSize)
-        if ( addr + size > allocStart + allocInfo.size )
+        if ( size > alloc.size ) {
             throw std::runtime_error("SimpleMemoryManager: read out of bounds");
-
-        std::memcpy(dst, &Mem[addr], size);
+        }
+        // Do address translation and read from buffer
+        std::memcpy(dst, &Mem[alloc.base_addr], size);
     }
 
     /// Write 'size' bytes from 'src' into address 'addr'.
     /// Performs simple bounds checking.
-    void write(uint64_t addr, const void* src, size_t size) override {
-        auto [allocStart, allocInfo] = findAllocation(addr);
+    void write(AllocID addr, const void* src, size_t size) override {
+        Allocation& alloc = findAllocation(addr);
         // Ensure the entire write fits within [allocStart, allocStart + allocSize)
-        if ( addr + size > allocStart + allocInfo.size )
+        if ( size > alloc.size ) {
             throw std::runtime_error("SimpleMemoryManager: write out of bounds");
+        }
+        std::memcpy(&Mem[alloc.base_addr], src, size);
+    }
 
-        std::memcpy(&Mem[addr], src, size);
+    /// Write 'size' bytes from 'src' into address 'addr', calling realloc if allocation is too small
+    /// Throws exception iff realloc fails to allocate another block
+    void force_write(AllocID addr, const void* src, size_t size) override {
+        Allocation& alloc = findAllocation(addr);
+        if ( size > alloc.size ) {
+            realloc(addr, size);
+        }
+        std::memcpy(&Mem[alloc.base_addr], src, size);
     }
 
     /// Copy 'size' bytes from address 'src' to address 'dst'
     /// Performs simple bounds checking
-    void copy(const uint64_t src, const uint64_t dst, size_t size) override {
-        auto [allocStart, allocInfo] = findAllocation(src);
-        // Ensure the entire write fits within [allocStart, allocStart + allocSize)
-        if ( src + size > allocStart + allocInfo.size ) {
-            throw std::runtime_error("SimpleMemoryManager: copy out of bounds");
+    void copy(const AllocID src, const AllocID dst, size_t size) override {
+        Allocation& src_alloc = findAllocation(src);
+        Allocation& dst_alloc = findAllocation(dst);
+        // Ensure the entire read fits within [allocStart, allocStart + allocSize)
+        if ( size > +src_alloc.size ) {
+            throw std::runtime_error("SimpleMemoryManager: read out of bounds in copy");
         }
-        std::memcpy(&Mem[dst], &Mem[src], size);
+        if ( size > dst_alloc.size ) {
+            throw std::runtime_error("SimpleMemoryManager: write out of bounds in copy");
+        }
+        std::memcpy(&Mem[dst_alloc.base_addr], &Mem[src_alloc.base_addr], size);
+    }
+
+    void realloc(const AllocID src, const size_t new_size) override {
+        Allocation& src_alloc = findAllocation(src);
+
+        // Requested size is smaller, no need to move
+        if ( new_size < src_alloc.size ) {
+            src_alloc.size = new_size;
+            return;
+        }
+
+        // New size is too large, reallocate elsewhere
+        llvm::outs() << mli::fmt::log("Allocation " + std::to_string(src) + " too large, reallocating\n");
+        free(src);
+        FreeBlock& new_block = findAvailableBlock(new_size);
+
+        // Update dimensions of allocation
+        src_alloc.base_addr  = new_block.base_addr;
+        src_alloc.size       = new_size;
+
+        // Update dimensions of free block
+        new_block.base_addr += new_size;
+        new_block.size -= new_size;
     }
 
   private:
     /// A struct to track basic allocation metadata.
     /// TODO: Add alignment, original request, etc.
     struct Allocation {
-        size_t size;
+        size_t   size;
+        uint64_t base_addr;
+        AllocID  alloc_id;
+    };
+
+    struct FreeBlock {
+        uint64_t base_addr;
+        size_t   size;
     };
 
     /// Lookup which allocation covers a given address 'addr'.
     /// We do a lower_bound or predecessor search to find the earliest allocation
     /// that starts before (or at) 'addr'.
-    std::pair<uint64_t, Allocation> findAllocation(uint64_t addr) {
-        // Upper bound returns the first iterator greater than 'addr'.
-        auto it = allocations.upper_bound(addr);
-        // If 'it' is not the first in the map, step back one to see if that
-        // allocation covers 'addr'.
-        if ( it != allocations.begin() ) {
-            --it;
-            uint64_t          allocStart = it->first;
-            const Allocation& info       = it->second;
-            if ( addr >= allocStart && addr < (allocStart + info.size) ) {
-                return {allocStart, info};
-            }
+    inline Allocation& findAllocation(AllocID id) {
+        auto it = allocations.find(id);
+        if ( it == allocations.end() ) {
+            throw std::runtime_error("ID not found in allocation");
         }
-        throw std::runtime_error("SimpleMemoryManager: address not in any allocation");
+        return it->second;
+    }
+
+    inline const Allocation& findAllocation(AllocID id) const {
+        auto it = allocations.find(id);
+        if ( it == allocations.end() ) {
+            throw std::runtime_error("ID not found in allocation");
+        }
+        return it->second;
+    }
+
+    FreeBlock& findAvailableBlock(size_t size) {
+        auto oldNext = next;
+        do {
+            if ( next->size >= size ) {
+                return *next;
+            }
+            // Advance list, circling back if at end
+            next = ++next == freeBlocks.end() ? freeBlocks.begin() : next;
+        } while ( next != oldNext );
+
+        // Examined all blocks, but none are large enough
+        throw std::bad_alloc();
     }
 
     // A single contiguous buffer
     std::vector<char> Mem;
 
-    // All available memory blocks, available as pairs [beginAddr, size]
-    std::list<std::pair<uint64_t, uint64_t>> freeBlocks;
+    // All available memory blocks
+    std::list<FreeBlock> freeBlocks;
 
     // Iterator to the last allocated block in memory
     // Used for "next-block" allocation strategy
-    std::list<std::pair<uint64_t, uint64_t>>::iterator next;
+    std::list<FreeBlock>::iterator next;
 
     // Map from "address" (offset) -> Allocation metadata
-    std::map<uint64_t, Allocation> allocations;
+    std::map<AllocID, Allocation> allocations;
+
+    // Allocation ID
+    uint32_t next_alloc_id = 0;
 };
 }  // namespace mlir
 
