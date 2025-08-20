@@ -38,6 +38,10 @@ target_link_libraries(MLIRInterpreter
   MLIRLLVMDialect
   MLIRArithDialect
   MLIRControlFlowDialect
+<<<<<<< HEAD
   MLIRMemRefDialect
+=======
+  MLIRSCFDialect
+>>>>>>> main
   MLIRSupport
 )

@@ -27,6 +27,7 @@ add_library(MLIRInterpreterLib SHARED
   Interpreter/Dialects/Arith/ArithInterpreter.cpp
   Interpreter/Dialects/CF/CFInterpreter.cpp
   Interpreter/Dialects/MemRef/MemRefInterpreter.cpp
+  Interpreter/Dialects/SCF/SCFInterpreter.cpp
 )
 
 # Include directories for the library
@@ -63,6 +64,7 @@ target_link_libraries(MLIRInterpreterLib
   MLIRLLVMDialect
   MLIRControlFlowDialect
   MLIRMemRefDialect
+  MLIRSCFDialect
   MLIRSupport
   MLIRParser
   MLIRTransforms
