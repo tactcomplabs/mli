@@ -42,7 +42,7 @@ class MemoryManager {
     virtual void    read(AllocID addr, void* dst, size_t size) const         = 0;
     virtual void    write(AllocID addr, const void* src, size_t size)        = 0;
     virtual void    copy(const AllocID src, const uint64_t dst, size_t size) = 0;
-    virtual void    realloc(const AllocID src, const size_t new_size)        = 0;
+    virtual bool    realloc(const AllocID src, const size_t new_size)        = 0;
     virtual void    force_write(AllocID addr, const void* src, size_t size)  = 0;
 };
 
@@ -95,7 +95,7 @@ class SimpleMemoryManager : public MemoryManager {
         // Find supremum/infimum of freed block located at addr
         // (i.e. closest available blocks on either side of freed block)
         auto right     = std::upper_bound(freeBlocks.begin(), freeBlocks.end(), addr, [](const uint32_t a, const FreeBlock& b) {
-            return a < b.base_addr;
+            return a <= b.base_addr;
         });
         auto left      = std::prev(right);
 
@@ -178,17 +178,39 @@ class SimpleMemoryManager : public MemoryManager {
         std::memcpy(&Mem[dst_alloc.base_addr], &Mem[src_alloc.base_addr], size);
     }
 
-    void realloc(const AllocID src, const size_t new_size) override {
+    /// Resize 'src' to 'new_size' bytes
+    /// Return true iff base address changes
+    bool realloc(const AllocID src, const size_t new_size) override {
         Allocation& src_alloc = findAllocation(src);
 
         // Requested size is smaller, no need to move
         if ( new_size < src_alloc.size ) {
             src_alloc.size = new_size;
-            return;
+            return false;
         }
 
         // New size is too large, reallocate elsewhere
-        llvm::outs() << mli::fmt::log("Allocation " + std::to_string(src) + " too large, reallocating\n");
+        // Find free block immediately after allocation
+        auto it = std::upper_bound(
+            freeBlocks.begin(),
+            freeBlocks.end(),
+            src_alloc.base_addr + src_alloc.size,
+            [](const size_t addr, const FreeBlock& blk) { return blk.base_addr >= addr; }
+        );
+
+        // Right neighbor is available, poach memory from it and keep our original address
+        if ( it != freeBlocks.end() && it->base_addr == src_alloc.base_addr + src_alloc.size ) {
+            // How much memory do we need to borrow?
+            size_t delta = new_size - src_alloc.size;
+            if ( it->size >= delta ) {
+                it->size -= delta;
+                it->base_addr += delta;
+                src_alloc.size = new_size;
+                return false;
+            }
+        }
+
+        // Right neighbor is unavailable or inadequate, must relocate buffer
         free(src);
         FreeBlock& new_block = findAvailableBlock(new_size);
 
@@ -199,6 +221,7 @@ class SimpleMemoryManager : public MemoryManager {
         // Update dimensions of free block
         new_block.base_addr += new_size;
         new_block.size -= new_size;
+        return true;
     }
 
   private:

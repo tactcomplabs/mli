@@ -24,16 +24,21 @@ void testAlloc(SimpleMemoryManager& mem, const uint64_t size, bool throwExceptio
     }
 }
 
-void testRealloc(SimpleMemoryManager& mem, const uint64_t id, const uint64_t new_size, bool throwException = false) {
+void testRealloc(
+    SimpleMemoryManager& mem, const uint64_t id, const uint64_t new_size, bool expectCopy = false, bool throwException = false
+) {
     try {
-        mem.realloc(id, new_size);
+        bool copy = mem.realloc(id, new_size);
+        if ( copy != expectCopy ) {
+            throw std::runtime_error("Copy semantics differ");
+        }
         // realloc doesn't throw exception, determine if this is good or bad
         if ( throwException )
             throw std::runtime_error("No exception thrown!");
     } catch ( std::exception& e ) {
-        // Throw a second exception if the test fails
-        if ( !throwException || std::string(e.what()) == "No exception thrown" )
-            throw std::exception();
+        // Throw a second exception if the test fails (i.e. we are not expecting an exception)
+        if ( !throwException )
+            throw e;
     }
 }
 
@@ -103,18 +108,18 @@ void runReallocTests() {
     // Case I: New size is less than old size, no copy
     SimpleMemoryManager mem1              = SimpleMemoryManager(memSize);
     uint64_t            id_1              = mem1.allocate(blockSizes[0]);
-    testRealloc(mem1, id_1, 10, false);  //
+    testRealloc(mem1, id_1, 10, false, false);  //
 
     // Case II: New size is larger, merge with neighbor block, no copy
     SimpleMemoryManager mem2 = SimpleMemoryManager(memSize);
     uint64_t            id_2 = mem2.allocate(blockSizes[0]);
-    testRealloc(mem2, id_2, 30, false);
+    testRealloc(mem2, id_2, 30, false, false);
 
     // Case III: New size is larger, can't merge with neighbor, must copy to new addr
     SimpleMemoryManager mem3 = SimpleMemoryManager(memSize);
     uint64_t            id_3 = mem3.allocate(blockSizes[0]);
     mem3.allocate(blockSizes[1]);
-    testRealloc(mem3, id_3, blockSizes[2], false);
+    testRealloc(mem3, id_3, blockSizes[2], true, false);
 }
 
 int main() {
