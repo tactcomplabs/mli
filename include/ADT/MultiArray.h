@@ -62,7 +62,7 @@ class MultiArray {
     std::vector<intptr_t> dims;
     int64_t               total_elems;
     MultiArrayKind        elem_kind = UnknownKind;
-    uint64_t              addr;  // address in MemoryManager
+    uint64_t              vaddr;  // virtual address in MemoryManager
   public:
     // Rule of 5
     MultiArray()                              = default;
@@ -80,7 +80,7 @@ class MultiArray {
     }
 
     // Deserialization constructor, assuming that bytes was created with serialize
-    MultiArray(const char* bytes, const size_t size, const uint64_t _addr) : addr(_addr) {
+    MultiArray(const char* bytes, const size_t size, const uint64_t addr) : vaddr(addr) {
         assert(size >= sizeof(MultiArrayMetadata) && "bytes array is too small!");
         const auto* header     = reinterpret_cast<const MultiArrayMetadata*>(bytes);
 
@@ -89,7 +89,7 @@ class MultiArray {
         buff.assign(buff_start, buff_start + header->buff_size);
 
         // Find where the dimension vector is
-        const int64_t* dims_start = reinterpret_cast<const int64_t*>(bytes + header->dims_offset);
+        const intptr_t* dims_start = reinterpret_cast<const intptr_t*>(bytes + header->dims_offset);
         dims.assign(dims_start, dims_start + header->dims_size / sizeof(intptr_t));
 
         // Restore other primitives
@@ -202,9 +202,9 @@ class MultiArray {
 
     MultiArrayKind getKind() const { return elem_kind; }
 
-    void setAddr(const uint64_t newAddr) { addr = newAddr; }
+    void setAddr(const uint64_t newAddr) { vaddr = newAddr; }
 
-    uint64_t getAddr() const { return addr; }
+    uint64_t getAddr() const { return vaddr; }
 
   private:
     template<typename T>
