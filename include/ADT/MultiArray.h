@@ -18,6 +18,7 @@
 # limitations under the License.
 */
 
+#include "MLIUtils.h"
 #include "mlir/IR/BuiltinTypes.h"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/APInt.h"
@@ -28,6 +29,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include <cassert>
+#include <memory>
 #include <numeric>
 #include <vector>
 
@@ -66,10 +68,10 @@ class MultiArray {
   public:
     // Rule of 5
     MultiArray()                              = default;
-    ~MultiArray()                             = default;
     MultiArray& operator=(MultiArray& other)  = default;
     MultiArray(MultiArray&& other)            = default;
     MultiArray& operator=(MultiArray&& other) = default;
+    ~MultiArray()                             = default;
 
     // Default constructor
     MultiArray(const mlir::Type t, llvm::ArrayRef<intptr_t> new_dims) {
@@ -77,6 +79,16 @@ class MultiArray {
         total_elems = std::accumulate(dims.begin(), dims.end(), 1, std::multiplies<intptr_t>());
         elem_kind   = getKindFromType(t);
         buff.resize(kind_sizes[elem_kind] * total_elems);
+        if ( elem_kind == MultiArrayKind::FloatKind ) {
+            llvm::APFloat* typed_arr = reinterpret_cast<llvm::APFloat*>(buff.data());
+            llvm::APFloat  zero      = llvm::APFloat(llvm::APFloatBase::EnumToSemantics(getFloatSemantics(t)));
+            std::uninitialized_fill_n(typed_arr, total_elems, zero);
+        }
+        else if ( elem_kind == MultiArrayKind::IntegerKind ) {
+            llvm::APInt* typed_arr = reinterpret_cast<llvm::APInt*>(buff.data());
+            std::uninitialized_fill_n(typed_arr, total_elems, llvm::APInt(t.getIntOrFloatBitWidth(), 0ull));
+        }
+        // All other types are POD, no need to call constructors
     }
 
     // Deserialization constructor, assuming that bytes was created with serialize
@@ -161,8 +173,7 @@ class MultiArray {
         }
     }
 
-    // Print the dimensions of the array
-    std::string printDims() const { return print_helper<int64_t>(dims.data(), dims.size() * sizeof(int64_t)); }
+    llvm::ArrayRef<intptr_t> getDims() const { return llvm::ArrayRef(dims); }
 
     // Serialization logic for MemManager
     std::vector<char> serialize() const {

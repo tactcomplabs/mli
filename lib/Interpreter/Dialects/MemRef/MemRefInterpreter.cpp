@@ -30,31 +30,29 @@ namespace {
 
 // The MultiArray class isn't trivially copyable, so we can't store it in the interpreter
 // Instead, we write the raw bytes into the interpreter's memory manager
-// The EvalValues associated with memrefs instead store the address and size of the raw bytes
+// The EvalValues associated with memrefs instead store the virtual address and size of the raw bytes
 struct MemRefAllocation {
-    uint64_t addr;
+    uint64_t vaddr;
     size_t   size;
 
-    MemRefAllocation(uint64_t a, size_t s) : addr(a), size(s) {};
+    MemRefAllocation(uint64_t a, size_t s) : vaddr(a), size(s) {};
 };
 using MemRefAllocation = struct MemRefAllocation;
 
 // Create an instance of the MultiArray class from the MemoryManager
 MultiArray restoreFromMemManager(const EvalValue& val, const Interpreter& interpreter) {
-    auto [addr, total_bytes] = val.getData<MemRefAllocation>().front();
+    auto [vaddr, total_bytes] = val.getData<MemRefAllocation>().front();
     std::vector<char> buff(total_bytes);
-    interpreter.readFromMemManager(addr, buff.data(), total_bytes);
-    MultiArray arr = MultiArray(buff.data(), total_bytes, addr);
+    interpreter.readFromMemManager(vaddr, buff.data(), total_bytes);
+    MultiArray arr = MultiArray(buff.data(), total_bytes, vaddr);
     return arr;
 }
 
 // Update the byte representation of a MultiArray already present in the MemoryManager
 size_t updateInMemManager(const MultiArray& arr, const Interpreter& interpreter) {
-    const uint64_t          addr  = arr.getAddr();
+    const uint64_t          vaddr = arr.getAddr();
     const std::vector<char> bytes = arr.serialize();
-    // FIXME: The size of the MultiArray may have changed (due to reshape)
-    // If so, this is problematic, as the write will be OOB
-    interpreter.writeToMemManager(addr, bytes.data(), bytes.size());
+    interpreter.forceWriteToMemManager(vaddr, bytes.data(), bytes.size());
     return bytes.size();
 }
 
@@ -101,11 +99,11 @@ struct AllocOpInterpreter : public InterpreterOpInterface::ExternalModel<AllocOp
         // Create memref and write it to our memory manager, which is placed on the heap
         MultiArray        buff  = MultiArray(elem_type, dims);
         std::vector<char> bytes = buff.serialize();
-        uint64_t          addr  = interpreter.allocateInMemManager(bytes.size());
-        interpreter.writeToMemManager(addr, bytes.data(), bytes.size());
+        uint64_t          vaddr = interpreter.allocateInMemManager(bytes.size());
+        interpreter.writeToMemManager(vaddr, bytes.data(), bytes.size());
 
-        // If write is successful, bind the address to the SSA variable
-        MemRefAllocation alloc      = MemRefAllocation(addr, bytes.size());
+        // If write is successful, bind the virtual address to the SSA variable
+        MemRefAllocation alloc      = MemRefAllocation(vaddr, bytes.size());
         auto             evalResult = interpreter.createEvalValue(memref_type, &alloc, sizeof(alloc));
         return interpreter.createBindValueResult(evalResult);
     }
@@ -139,11 +137,11 @@ struct AllocaOpInterpreter : public InterpreterOpInterface::ExternalModel<Alloca
         // Create memref and write it to our memory manager, which is placed on the heap
         MultiArray        buff  = MultiArray(elem_type, dims);
         std::vector<char> bytes = buff.serialize();
-        uint64_t          addr  = interpreter.allocateInMemManager(bytes.size());
-        interpreter.writeToMemManager(addr, bytes.data(), bytes.size());
+        uint64_t          vaddr = interpreter.allocateInMemManager(bytes.size());
+        interpreter.writeToMemManager(vaddr, bytes.data(), bytes.size());
 
-        // If write is successful, bind the address to the SSA variable
-        MemRefAllocation alloc      = MemRefAllocation(addr, bytes.size());
+        // If write is successful, bind the virtual address to the SSA variable
+        MemRefAllocation alloc      = MemRefAllocation(vaddr, bytes.size());
         auto             evalResult = interpreter.createEvalValue(memref_type, &alloc, sizeof(alloc));
         return interpreter.createBindValueResult(evalResult);
     }
@@ -156,7 +154,7 @@ struct CopyOpInterpreter : public InterpreterOpInterface::ExternalModel<CopyOpIn
         if ( src.size != dst.size ) {
             return interpreter.createErrorResult("Source and destination memrefs have different shapes");
         }
-        interpreter.copyInMemManager(src.addr, dst.addr, src.size);
+        interpreter.copyInMemManager(src.vaddr, dst.vaddr, src.size);
         return interpreter.createVoidResult();
     }
 };
@@ -166,11 +164,13 @@ struct DeallocOpInterpreter : public InterpreterOpInterface::ExternalModel<Deall
         // NOTE: This can ONLY be called on memrefs allocated by alloc
         // Lifetime of memrefs created via alloca are managed by the stack
         // As of now, any heap-allocated memref are stored in the interpreter's memory manager
-        // The actual SSA variable which we will retrieve is an address (uint64_t), not a MultiArray type
+        // The actual SSA variable which we will retrieve is an virtual address (uint64_t), not a MultiArray type
         try {
-            auto [addr_to_free, size] = operands[0].getData<MemRefAllocation>().front();
-            interpreter.freeInMemManager(addr_to_free);
-            llvm::outs() << mli::fmt::info("Freed memref at address " + std::to_string(addr_to_free) + "\n");
+            auto [vaddr_to_free, size] = operands[0].getData<MemRefAllocation>().front();
+            interpreter.freeInMemManager(vaddr_to_free);
+            llvm::outs() << mli::fmt::info(
+                "Freed memref allocation " + std::to_string(MemoryManager::get_vaddr_id(vaddr_to_free)) + "\n"
+            );
         } catch ( std::runtime_error& e ) {
             return interpreter.createErrorResult(
                 "Failed to free SSA variable " + getSSAName(op) + ", are you sure it was created with memref.alloc?"
@@ -248,7 +248,7 @@ struct ReshapeOpInterpreter : public InterpreterOpInterface::ExternalModel<Resha
 
         const intptr_t* new_dims = dims_buff.getData<const intptr_t>();
         buff.reshape(llvm::ArrayRef(new_dims, num_elems));
-        llvm::outs() << mli::fmt::info("new dims: " + buff.printDims() + "\n");
+        llvm::outs() << mli::fmt::info("new dims: " + mli::printAsList(buff.getDims()) + "\n");
 
         size_t           size       = updateInMemManager(buff, interpreter);
         MemRefAllocation alloc      = MemRefAllocation(buff.getAddr(), size);

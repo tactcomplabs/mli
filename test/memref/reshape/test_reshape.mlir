@@ -8,3 +8,18 @@ func.func @main(%new_dim_1 : index, %new_dim_2 : index) {
    %new_arr = memref.reshape %arr(%new_shape) : (memref<3x3x2xf32>, memref<2xindex>) -> memref<?x?xf32>
    func.return
 }
+
+func.func @realloc() {
+	%zero = arith.constant 0 : index
+	%one = arith.constant 1 : index
+	%two = arith.constant 2 : index
+	%three = arith.constant 3 : index
+	%arr = memref.alloc() : memref<6x3xi32>
+	%shape = memref.alloc() : memref<3xindex>
+	memref.store %two, %shape[%zero] : memref<3xindex>
+	memref.store %three, %shape[%one] : memref<3xindex>
+	memref.store %three, %shape[%two] : memref<3xindex>
+	%new_arr = memref.reshape %arr(%shape) : (memref<6x3xi32>, memref<3xindex>) -> memref<*xi32> // should call realloc
+	func.return
+}
+

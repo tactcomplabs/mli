@@ -33,17 +33,29 @@ namespace mlir {
 
 class MemoryManager {
   public:
-    using AllocID = uint64_t;
+    // Use a "virtual address" for reading/writing into the buffer
+    // The upper 32 bits give a unique allocation ID, which is assigned during allocate()
+    // Note that over the course of execution, the associated base address for a given allocation may be reassigned
+    // This is why we use this virtual scheme, since we can't update an address in the interpreter w/o violating SSA
+    // The lower 32 bits is an offset from the allocation's base address from which to start performing memory operations
+    using VirtualAddr = uint64_t;
 
   public:
-    virtual ~MemoryManager()                                                 = default;
-    virtual AllocID allocate(size_t size)                                    = 0;
-    virtual void    free(AllocID addr)                                       = 0;
-    virtual void    read(AllocID addr, void* dst, size_t size) const         = 0;
-    virtual void    write(AllocID addr, const void* src, size_t size)        = 0;
-    virtual void    copy(const AllocID src, const uint64_t dst, size_t size) = 0;
-    virtual bool    realloc(const AllocID src, const size_t new_size)        = 0;
-    virtual void    force_write(AllocID addr, const void* src, size_t size)  = 0;
+    virtual ~MemoryManager()                                                         = default;
+    virtual VirtualAddr allocate(size_t size)                                        = 0;
+    virtual void        free(VirtualAddr addr)                                       = 0;
+    virtual void        read(VirtualAddr addr, void* dst, size_t size) const         = 0;
+    virtual void        write(VirtualAddr addr, const void* src, size_t size)        = 0;
+    virtual void        copy(const VirtualAddr src, const uint64_t dst, size_t size) = 0;
+    virtual bool        realloc(const VirtualAddr src, const size_t new_size)        = 0;
+    virtual void        force_write(VirtualAddr addr, const void* src, size_t size)  = 0;
+
+  public:
+    static inline VirtualAddr make_vaddr(uint32_t alloc_id, uint32_t offset) { return uint64_t(alloc_id) << 32 | offset; }
+
+    static inline uint32_t get_vaddr_id(VirtualAddr vaddr) { return vaddr >> 32; }
+
+    static inline uint32_t get_vaddr_offset(VirtualAddr vaddr) { return vaddr & 0xFFFFFFFF; }
 };
 
 /// TODO: Move to another file maybe?
@@ -71,7 +83,7 @@ class SimpleMemoryManager : public MemoryManager {
 
     /// Allocate 'size' bytes. We return an offset (uint64_t) into our single buffer.
     /// Throws std::bad_alloc if we can't fit the allocation.
-    AllocID allocate(size_t size) override {
+    VirtualAddr allocate(size_t size) override {
         FreeBlock& new_block = findAvailableBlock(size);
         Allocation alloc     = {size, new_block.base_addr, next_alloc_id};
 
@@ -80,15 +92,17 @@ class SimpleMemoryManager : public MemoryManager {
         new_block.base_addr += size;
 
         allocations[next_alloc_id++] = alloc;
-        return alloc.alloc_id;
+        return make_vaddr(alloc.alloc_id, 0);
     }
 
     /// Remove allocation associated with addr from map
     /// Also reclaims freed memory for future allocations
-    void free(AllocID alloc_id) override {
+    void free(VirtualAddr vaddr) override {
+        uint32_t alloc_id     = get_vaddr_id(vaddr);
+        // NOTE: We ignore the offset when freeing memory, instead clamping it to zero
         Allocation& alloc     = findAllocation(alloc_id);
-        uint64_t    freedSize = alloc.size;
-        uint64_t    addr      = alloc.base_addr;
+        size_t      freedSize = alloc.size;
+        uint32_t    addr      = alloc.base_addr;
         allocations.erase(alloc_id);
 
         // Consolidate blocks by reclaiming freed memory
@@ -132,56 +146,56 @@ class SimpleMemoryManager : public MemoryManager {
 
     /// Read 'size' bytes from address 'addr' into 'dst'.
     /// Performs simple bounds checking against our recorded allocations.
-    void read(AllocID alloc_id, void* dst, size_t size) const override {
-        const Allocation& alloc = findAllocation(alloc_id);
+    void read(VirtualAddr vaddr, void* dst, size_t size) const override {
+        const Allocation& alloc = findAllocation(get_vaddr_id(vaddr));
         // Ensure the entire read fits within [allocStart, allocStart + allocSize)
         if ( size > alloc.size ) {
             throw std::runtime_error("SimpleMemoryManager: read out of bounds");
         }
         // Do address translation and read from buffer
-        std::memcpy(dst, &Mem[alloc.base_addr], size);
+        std::memcpy(dst, &Mem[alloc.base_addr + get_vaddr_offset(vaddr)], size);
     }
 
     /// Write 'size' bytes from 'src' into address 'addr'.
     /// Performs simple bounds checking.
-    void write(AllocID addr, const void* src, size_t size) override {
-        Allocation& alloc = findAllocation(addr);
+    void write(VirtualAddr vaddr, const void* src, size_t size) override {
+        Allocation& alloc = findAllocation(get_vaddr_id(vaddr));
         // Ensure the entire write fits within [allocStart, allocStart + allocSize)
         if ( size > alloc.size ) {
             throw std::runtime_error("SimpleMemoryManager: write out of bounds");
         }
-        std::memcpy(&Mem[alloc.base_addr], src, size);
+        std::memcpy(&Mem[alloc.base_addr + get_vaddr_offset(vaddr)], src, size);
     }
 
     /// Write 'size' bytes from 'src' into address 'addr', calling realloc if allocation is too small
     /// Throws exception iff realloc fails to allocate another block
-    void force_write(AllocID addr, const void* src, size_t size) override {
-        Allocation& alloc = findAllocation(addr);
+    void force_write(VirtualAddr vaddr, const void* src, size_t size) override {
+        Allocation& alloc = findAllocation(get_vaddr_id(vaddr));
         if ( size > alloc.size ) {
-            realloc(addr, size);
+            realloc(vaddr, size);
         }
-        std::memcpy(&Mem[alloc.base_addr], src, size);
+        std::memcpy(&Mem[alloc.base_addr + get_vaddr_offset(vaddr)], src, size);
     }
 
     /// Copy 'size' bytes from address 'src' to address 'dst'
     /// Performs simple bounds checking
-    void copy(const AllocID src, const AllocID dst, size_t size) override {
-        Allocation& src_alloc = findAllocation(src);
-        Allocation& dst_alloc = findAllocation(dst);
+    void copy(const VirtualAddr src, const VirtualAddr dst, size_t size) override {
+        Allocation& src_alloc = findAllocation(get_vaddr_id(src));
+        Allocation& dst_alloc = findAllocation(get_vaddr_id(dst));
         // Ensure the entire read fits within [allocStart, allocStart + allocSize)
-        if ( size > +src_alloc.size ) {
+        if ( size > src_alloc.size ) {
             throw std::runtime_error("SimpleMemoryManager: read out of bounds in copy");
         }
         if ( size > dst_alloc.size ) {
             throw std::runtime_error("SimpleMemoryManager: write out of bounds in copy");
         }
-        std::memcpy(&Mem[dst_alloc.base_addr], &Mem[src_alloc.base_addr], size);
+        std::memcpy(&Mem[dst_alloc.base_addr + get_vaddr_offset(dst)], &Mem[src_alloc.base_addr + get_vaddr_offset(src)], size);
     }
 
     /// Resize 'src' to 'new_size' bytes
     /// Return true iff base address changes
-    bool realloc(const AllocID src, const size_t new_size) override {
-        Allocation& src_alloc = findAllocation(src);
+    bool realloc(const VirtualAddr vaddr, const size_t new_size) override {
+        Allocation& src_alloc = findAllocation(get_vaddr_id(vaddr));
 
         // Requested size is smaller, no need to move
         if ( new_size < src_alloc.size ) {
@@ -211,7 +225,7 @@ class SimpleMemoryManager : public MemoryManager {
         }
 
         // Right neighbor is unavailable or inadequate, must relocate buffer
-        free(src);
+        free(vaddr);
         FreeBlock& new_block = findAvailableBlock(new_size);
 
         // Update dimensions of allocation
@@ -229,19 +243,19 @@ class SimpleMemoryManager : public MemoryManager {
     /// TODO: Add alignment, original request, etc.
     struct Allocation {
         size_t   size;
-        uint64_t base_addr;
-        AllocID  alloc_id;
+        uint32_t base_addr;
+        uint32_t alloc_id;
     };
 
     struct FreeBlock {
-        uint64_t base_addr;
+        uint32_t base_addr;
         size_t   size;
     };
 
     /// Lookup which allocation covers a given address 'addr'.
     /// We do a lower_bound or predecessor search to find the earliest allocation
     /// that starts before (or at) 'addr'.
-    inline Allocation& findAllocation(AllocID id) {
+    inline Allocation& findAllocation(uint32_t id) {
         auto it = allocations.find(id);
         if ( it == allocations.end() ) {
             throw std::runtime_error("ID not found in allocation");
@@ -249,7 +263,7 @@ class SimpleMemoryManager : public MemoryManager {
         return it->second;
     }
 
-    inline const Allocation& findAllocation(AllocID id) const {
+    inline const Allocation& findAllocation(uint32_t id) const {
         auto it = allocations.find(id);
         if ( it == allocations.end() ) {
             throw std::runtime_error("ID not found in allocation");
@@ -281,8 +295,8 @@ class SimpleMemoryManager : public MemoryManager {
     // Used for "next-block" allocation strategy
     std::list<FreeBlock>::iterator next;
 
-    // Map from "address" (offset) -> Allocation metadata
-    std::map<AllocID, Allocation> allocations;
+    // Map from allocation ID -> Allocation metadata
+    std::map<uint32_t, Allocation> allocations;
 
     // Allocation ID
     uint32_t next_alloc_id = 0;
