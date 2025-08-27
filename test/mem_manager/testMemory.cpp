@@ -76,27 +76,27 @@ void runAllocTests() {
     SimpleMemoryManager mem4 = SimpleMemoryManager(memSize);
     prepareMemManager(mem4, &blockSizes[0], true, true);
 
-    const uint64_t middle_id = 1;
+    const uint64_t middle_vaddr = 1ull << 32;
 
     // Case I
-    mem1.free(middle_id);
+    mem1.free(middle_vaddr);
     testAlloc(mem1, blockSizes[1], false);  // should succeed, use original block
     testAlloc(mem1, memSize, true);         // should fail, not enough space
 
     // Case II
-    mem2.free(middle_id);
+    mem2.free(middle_vaddr);
     testAlloc(mem2, blockSizes[1], false);                  // should succeed, reclaim block 1
     testAlloc(mem2, blockSizes[1] + blockSizes[2], false);  // should succeed, reclaim block 1+2
     testAlloc(mem2, memSize, true);                         // should fail, not enough space
 
     // Case III
-    mem3.free(middle_id);
+    mem3.free(middle_vaddr);
     testAlloc(mem3, blockSizes[1], false);                  // should succeed, reclaim block 0
     testAlloc(mem3, blockSizes[0] + blockSizes[1], false);  // should succeed, reclaim block 0+1
     testAlloc(mem3, memSize, true);                         // should fail, not enough space
 
     // Case IV
-    mem4.free(middle_id);
+    mem4.free(middle_vaddr);
     testAlloc(mem4, blockSizes[1], false);
     testAlloc(mem4, memSize, false);
 }
