@@ -81,7 +81,7 @@ class MultiArray {
         buff.resize(kind_sizes[elem_kind] * total_elems);
         if ( elem_kind == MultiArrayKind::FloatKind ) {
             llvm::APFloat* typed_arr = reinterpret_cast<llvm::APFloat*>(buff.data());
-            llvm::APFloat  zero      = llvm::APFloat(llvm::APFloatBase::EnumToSemantics(getFloatSemantics(t)));
+            llvm::APFloat  zero      = llvm::APFloat(llvm::APFloatBase::EnumToSemantics(mlir::EvalValue::getFloatSemantics(t)));
             std::uninitialized_fill_n(typed_arr, total_elems, zero);
         }
         else if ( elem_kind == MultiArrayKind::IntegerKind ) {

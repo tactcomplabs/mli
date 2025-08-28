@@ -149,31 +149,6 @@ inline bool validateFunctionArguments(mlir::func::FuncOp funcOp, llvm::ArrayRef<
     return true;
 }
 
-/// Get integer data from an mlir::EvalValue.
-inline APInt getIntegerData(const mlir::EvalValue& val, bool isSigned = false) {
-    return val.getData<APInt>().front();
-}
-
-/// Get float data from an mlir::EvalValue.
-inline APFloat getFloatData(const mlir::EvalValue& val) {
-    return val.getData<APFloat>().front();
-}
-
-/// Get semantics for a given MLIR type.
-/// These semantics are used in constructing/converting APFloat types.
-inline Semantics getFloatSemantics(const mlir::Type& result_type) {
-    if ( result_type.isF16() ) {  // 16-bit float.
-        return Semantics::S_IEEEhalf;
-    }
-    else if ( result_type.isBF16() ) {  // 16-bit brain float.
-        return Semantics::S_BFloat;
-    }
-    else if ( result_type.isF32() ) {  // Standard 32-bit float.
-        return Semantics::S_IEEEsingle;
-    }
-    return Semantics::S_IEEEdouble;
-}
-
 /// Compute a unary floating point operation (e.g. std::sqrt, std::cos).
 /// The result will maintain the original number's semantics.
 inline APFloat compute(const APFloat& num, double (*func)(double)) {

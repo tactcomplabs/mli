@@ -32,7 +32,7 @@ static mlir::EvalValue convertArgToEvalValue(
     }
     else if ( mlir::isa<mlir::FloatType>(argType) ) {
         unsigned  width     = argType.getIntOrFloatBitWidth();
-        Semantics s         = mli::getFloatSemantics(argType);
+        Semantics s         = mlir::EvalValue::getFloatSemantics(argType);
         APFloat   float_val = APFloat(APFloatBase::EnumToSemantics(s), argStr);
         llvm::outs() << mli::fmt::dim("Parsing ") << mli::fmt::highlight(argStr) << mli::fmt::dim(" as ")
                      << mli::fmt::type("f" + std::to_string(width)) << "\n";

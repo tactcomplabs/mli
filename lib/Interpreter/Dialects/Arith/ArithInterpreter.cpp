@@ -45,9 +45,9 @@ static llvm::RoundingMode convertRoundingMode(arith::RoundingMode mode) {
 struct ArithAddFOpInterpreter : public InterpreterOpInterface::ExternalModel<ArithAddFOpInterpreter, arith::AddFOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
         const APFloat result = lhs + rhs;
         mli::fmt::printResult(llvm::outs(), result);
@@ -61,9 +61,9 @@ struct ArithAddIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ari
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0]);
+        const APInt lhs = operands[0].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1]);
+        const APInt rhs = operands[1].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs + rhs;
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -79,9 +79,9 @@ struct ArithAddUIExtendedOpInterpreter
         bool isSigned = false;
         bool overflow = false;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs.uadd_ov(rhs, overflow);
         mli::fmt::printResult(llvm::outs(), std::make_pair(result, overflow), isSigned);
@@ -98,9 +98,9 @@ struct ArithAndIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ari
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs & rhs;
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -125,16 +125,16 @@ struct ArithBitcastOpInterpreter : public InterpreterOpInterface::ExternalModel<
             evalResult = operands[0];
         }
         else if ( llvm::isa<mlir::FloatType>(src_type) ) {  // src float, ret int
-            const APFloat lhs = getFloatData(operands[0]);
+            const APFloat lhs = operands[0].getFloatData();
             mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
             const APInt result = lhs.bitcastToAPInt();
             mli::fmt::printResult(llvm::outs(), result);
             evalResult = interpreter.createEvalValue(result_type, &result, sizeof(result));
         }
         else if ( llvm::isa<mlir::IntegerType>(src_type) ) {  // src int, ret float
-            const APInt lhs = getIntegerData(operands[0]);
+            const APInt lhs = operands[0].getIntegerData();
             mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-            Semantics     s      = getFloatSemantics(result_type);
+            Semantics     s      = EvalValue::getFloatSemantics(result_type);
             const APFloat result = APFloat(llvm::APFloat::EnumToSemantics(s), lhs);
             mli::fmt::printResult(llvm::outs(), result);
             evalResult = interpreter.createEvalValue(result_type, &result, sizeof(result));
@@ -150,9 +150,9 @@ struct ArithCeilDivSIOpInterpreter : public InterpreterOpInterface::ExternalMode
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
 
         // const APInt doesn't have a ceiling division function so rely on remainder
@@ -177,9 +177,9 @@ struct ArithCeilDivUIOpInterpreter : public InterpreterOpInterface::ExternalMode
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
 
         // APInt doesn't have a ceiling division function so rely on remainder
@@ -203,9 +203,9 @@ struct ArithCmpFOpInterpreter : public InterpreterOpInterface::ExternalModel<Ari
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         auto predicate    = op->getAttrOfType<arith::CmpFPredicateAttr>("predicate").getValue();
 
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
 
         bool result;
@@ -244,9 +244,9 @@ struct ArithCmpIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ari
         bool isSigned  = predicate == arith::CmpIPredicate::slt || predicate == arith::CmpIPredicate::sle ||
                         predicate == arith::CmpIPredicate::sgt || predicate == arith::CmpIPredicate::sge;
 
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
 
         bool result;
@@ -306,9 +306,9 @@ struct ArithConstantOpInterpreter : public InterpreterOpInterface::ExternalModel
 struct ArithDivFOpInterpreter : public InterpreterOpInterface::ExternalModel<ArithDivFOpInterpreter, arith::DivFOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
 
         const APFloat result = lhs / rhs;
@@ -323,9 +323,9 @@ struct ArithDivSIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ar
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs.sdiv(rhs);
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -340,9 +340,9 @@ struct ArithDivUIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ar
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs.udiv(rhs);
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -356,13 +356,13 @@ struct ArithDivUIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ar
 struct ArithExtFOpInterpreter : public InterpreterOpInterface::ExternalModel<ArithExtFOpInterpreter, arith::ExtFOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat operand = getFloatData(operands[0]);
+        const APFloat operand = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "operand", operand);
 
         bool      losesInfo;
         auto      resultType      = op->getResult(0).getType();
         APFloat   result          = operand;
-        Semantics resultSemantics = getFloatSemantics(resultType);
+        Semantics resultSemantics = EvalValue::getFloatSemantics(resultType);
         result.convert(llvm::APFloatBase::EnumToSemantics(resultSemantics), llvm::RoundingMode::TowardZero, &losesInfo);
 
         mli::fmt::printResult(llvm::outs(), result);
@@ -375,7 +375,7 @@ struct ArithExtSIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ar
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
         unsigned    new_width = op->getResult(0).getType().getIntOrFloatBitWidth();
         const APInt result    = lhs.sext(new_width);
@@ -391,7 +391,7 @@ struct ArithExtUIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ar
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
         unsigned new_width = op->getResult(0).getType().getIntOrFloatBitWidth();
 
@@ -409,9 +409,9 @@ struct ArithFloorDivSIOpInterpreter
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
 
 #if NEW_LLVM
@@ -439,7 +439,7 @@ struct ArithFloorDivSIOpInterpreter
 struct ArithFPToSIOpInterpreter : public InterpreterOpInterface::ExternalModel<ArithFPToSIOpInterpreter, arith::FPToSIOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat operand = getFloatData(operands[0]);
+        const APFloat operand = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "operand", operand);
 
         unsigned resultWidth = op->getResult(0).getType().getIntOrFloatBitWidth();
@@ -458,7 +458,7 @@ struct ArithFPToSIOpInterpreter : public InterpreterOpInterface::ExternalModel<A
 struct ArithFPToUIOpInterpreter : public InterpreterOpInterface::ExternalModel<ArithFPToUIOpInterpreter, arith::FPToUIOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat operand = getFloatData(operands[0]);
+        const APFloat operand = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "operand", operand);
 
         unsigned resultWidth = op->getResult(0).getType().getIntOrFloatBitWidth();
@@ -483,7 +483,7 @@ struct ArithIndexCastOpInterpreter : public InterpreterOpInterface::ExternalMode
 
         EvalValue evalResult;
         if ( mlir::isa<mlir::IntegerType>(src_type) && mlir::isa<mlir::IndexType>(dest_type) ) {
-            const APInt lhs = getIntegerData(operands[0], isSigned);
+            const APInt lhs = operands[0].getIntegerData(isSigned);
             mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
             intptr_t result = static_cast<intptr_t>(lhs.sextOrTrunc(sizeof(intptr_t) * 8).getSExtValue());
             mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -513,7 +513,7 @@ struct ArithIndexCastUIOpInterpreter
 
         EvalValue evalResult;
         if ( mlir::isa<mlir::IntegerType>(src_type) && mlir::isa<mlir::IndexType>(dest_type) ) {
-            const APInt lhs = getIntegerData(operands[0], isSigned);
+            const APInt lhs = operands[0].getIntegerData(isSigned);
             mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
             intptr_t result = static_cast<intptr_t>(lhs.sextOrTrunc(sizeof(intptr_t) * 8).getSExtValue());
             mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -534,9 +534,9 @@ struct ArithIndexCastUIOpInterpreter
 // Maximum/Minimum Operations
 struct ArithMaximumFOpInterpreter : public InterpreterOpInterface::ExternalModel<ArithMaximumFOpInterpreter, arith::MaximumFOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
 
         const APFloat result = llvm::maximum(lhs, rhs);
@@ -550,9 +550,9 @@ struct ArithMaximumFOpInterpreter : public InterpreterOpInterface::ExternalModel
 struct ArithMaxNumFOpInterpreter : public InterpreterOpInterface::ExternalModel<ArithMaxNumFOpInterpreter, arith::MaxNumFOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs    = getFloatData(operands[1]);
+        const APFloat rhs    = operands[1].getFloatData();
         const APFloat result = maxnum(lhs, rhs);
         mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
@@ -566,9 +566,9 @@ struct ArithMaxSIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ar
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = APIntOps::smax(lhs, rhs);
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -583,9 +583,9 @@ struct ArithMaxUIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ar
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = APIntOps::umax(lhs, rhs);
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -598,9 +598,9 @@ struct ArithMaxUIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ar
 
 struct ArithMinimumFOpInterpreter : public InterpreterOpInterface::ExternalModel<ArithMinimumFOpInterpreter, arith::MinimumFOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
 
         const APFloat result = llvm::minimum(lhs, rhs);
@@ -614,9 +614,9 @@ struct ArithMinimumFOpInterpreter : public InterpreterOpInterface::ExternalModel
 struct ArithMinNumFOpInterpreter : public InterpreterOpInterface::ExternalModel<ArithMinNumFOpInterpreter, arith::MinNumFOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs    = getFloatData(operands[1]);
+        const APFloat rhs    = operands[1].getFloatData();
         const APFloat result = llvm::minnum(lhs, rhs);
         mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
@@ -630,9 +630,9 @@ struct ArithMinSIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ar
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = APIntOps::smin(lhs, rhs);
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -647,9 +647,9 @@ struct ArithMinUIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ar
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = APIntOps::umin(lhs, rhs);
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -663,9 +663,9 @@ struct ArithMinUIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ar
 struct ArithMulFOpInterpreter : public InterpreterOpInterface::ExternalModel<ArithMulFOpInterpreter, arith::MulFOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
 
         const APFloat result = lhs * rhs;
@@ -680,9 +680,9 @@ struct ArithMulIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ari
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs * rhs;
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -698,9 +698,9 @@ struct ArithMulSIExtendedOpInterpreter
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
 
         const unsigned op_width = operands[0].getType().getIntOrFloatBitWidth();
@@ -724,9 +724,9 @@ struct ArithMulUIExtendedOpInterpreter
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
 
         const unsigned op_width = operands[0].getType().getIntOrFloatBitWidth();
@@ -748,7 +748,7 @@ struct ArithMulUIExtendedOpInterpreter
 struct ArithNegFOpInterpreter : public InterpreterOpInterface::ExternalModel<ArithNegFOpInterpreter, arith::NegFOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat operand = getFloatData(operands[0]);
+        const APFloat operand = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "operand", operand);
 
         const APFloat result = -operand;
@@ -763,9 +763,9 @@ struct ArithOrIOpInterpreter : public InterpreterOpInterface::ExternalModel<Arit
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs | rhs;
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -779,9 +779,9 @@ struct ArithOrIOpInterpreter : public InterpreterOpInterface::ExternalModel<Arit
 struct ArithRemFOpInterpreter : public InterpreterOpInterface::ExternalModel<ArithRemFOpInterpreter, arith::RemFOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
 
         APFloat result = lhs;
@@ -797,9 +797,9 @@ struct ArithRemSIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ar
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs.srem(rhs);
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -814,9 +814,9 @@ struct ArithRemUIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ar
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs.urem(rhs);
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -842,9 +842,9 @@ struct ArithShLIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ari
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], false);
+        const APInt rhs = operands[1].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, false);
         const APInt result = lhs << rhs;
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -859,10 +859,10 @@ struct ArithShRSIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ar
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], false);
-        mli::fmt::printOperand(llvm::outs(), "rhs", rhs, false);
+        const APInt rhs = operands[1].getIntegerData();
+        mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
         const APInt result = lhs.ashr(rhs);
         mli::fmt::printResult(llvm::outs(), result, isSigned);
         // Create an EvalValue from the result
@@ -876,9 +876,9 @@ struct ArithShRUIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ar
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs.lshr(rhs);
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -893,11 +893,11 @@ struct ArithSIToFPOpInterpreter : public InterpreterOpInterface::ExternalModel<A
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
         bool        isSigned = true;
-        const APInt operand  = getIntegerData(operands[0], isSigned);
+        const APInt operand  = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "operand", operand, isSigned);
 
         auto      resultType      = op->getResult(0).getType();
-        Semantics resultSemantics = getFloatSemantics(resultType);
+        Semantics resultSemantics = EvalValue::getFloatSemantics(resultType);
         APFloat   result(llvm::APFloatBase::EnumToSemantics(resultSemantics));
         result.convertFromAPInt(operand, isSigned, llvm::RoundingMode::TowardZero);
 
@@ -911,9 +911,9 @@ struct ArithSIToFPOpInterpreter : public InterpreterOpInterface::ExternalModel<A
 struct ArithSubFOpInterpreter : public InterpreterOpInterface::ExternalModel<ArithSubFOpInterpreter, arith::SubFOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
 
         const APFloat result = lhs - rhs;
@@ -928,9 +928,9 @@ struct ArithSubIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ari
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs - rhs;
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -944,7 +944,7 @@ struct ArithSubIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ari
 struct ArithTruncFOpInterpreter : public InterpreterOpInterface::ExternalModel<ArithTruncFOpInterpreter, arith::TruncFOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat operand = getFloatData(operands[0]);
+        const APFloat operand = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "operand", operand);
 
         // Get rounding mode from optional attribute
@@ -959,7 +959,7 @@ struct ArithTruncFOpInterpreter : public InterpreterOpInterface::ExternalModel<A
 
         bool      losesInfo;
         auto      resultType      = op->getResult(0).getType();
-        Semantics resultSemantics = getFloatSemantics(resultType);
+        Semantics resultSemantics = EvalValue::getFloatSemantics(resultType);
 
         // Convert using the determined rounding mode
         APFloat result            = operand;
@@ -980,7 +980,7 @@ struct ArithTruncIOpInterpreter : public InterpreterOpInterface::ExternalModel<A
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt operand = getIntegerData(operands[0], isSigned);
+        const APInt operand = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "operand", operand, isSigned);
 
         const unsigned result_width = op->getResult(0).getType().getIntOrFloatBitWidth();
@@ -998,11 +998,11 @@ struct ArithUIToFPOpInterpreter : public InterpreterOpInterface::ExternalModel<A
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
         bool        isSigned = false;
-        const APInt operand  = getIntegerData(operands[0], isSigned);
+        const APInt operand  = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "operand", operand, isSigned);
 
         auto      resultType      = op->getResult(0).getType();
-        Semantics resultSemantics = getFloatSemantics(resultType);
+        Semantics resultSemantics = EvalValue::getFloatSemantics(resultType);
         APFloat   result(llvm::APFloatBase::EnumToSemantics(resultSemantics));
         result.convertFromAPInt(operand, isSigned, llvm::RoundingMode::TowardZero);
 
@@ -1017,9 +1017,9 @@ struct ArithXOrIOpInterpreter : public InterpreterOpInterface::ExternalModel<Ari
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs ^ rhs;
         mli::fmt::printResult(llvm::outs(), result, isSigned);

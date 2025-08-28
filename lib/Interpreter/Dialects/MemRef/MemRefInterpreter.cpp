@@ -19,6 +19,7 @@
 #include "ADT/MultiArray.h"
 #include "MLIFormat.h"
 #include "MLIUtils.h"
+#include "mlir/CustomTypes.h"
 #include "mlir/Interpreter/Dialects/MemRefInterpreter.h"
 #include "mlir/Interpreter/Interpreter.h"
 #include "mlir/Interpreter/InterpreterOpInterface.h"
@@ -28,24 +29,12 @@ using namespace mli;
 
 namespace {
 
-// The MultiArray class isn't trivially copyable, so we can't store it in the interpreter
-// Instead, we write the raw bytes into the interpreter's memory manager
-// The EvalValues associated with memrefs instead store the virtual address and size of the raw bytes
-struct MemRefAllocation {
-    uint64_t vaddr;
-    size_t   size;
-
-    MemRefAllocation(uint64_t a, size_t s) : vaddr(a), size(s) {};
-};
-using MemRefAllocation = struct MemRefAllocation;
-
 // Create an instance of the MultiArray class from the MemoryManager
 MultiArray restoreFromMemManager(const EvalValue& val, const Interpreter& interpreter) {
     auto [vaddr, total_bytes] = val.getData<MemRefAllocation>().front();
     std::vector<char> buff(total_bytes);
     interpreter.readFromMemManager(vaddr, buff.data(), total_bytes);
-    MultiArray arr = MultiArray(buff.data(), total_bytes, vaddr);
-    return arr;
+    return MultiArray(buff.data(), total_bytes, vaddr);
 }
 
 // Update the byte representation of a MultiArray already present in the MemoryManager
@@ -147,6 +136,28 @@ struct AllocaOpInterpreter : public InterpreterOpInterface::ExternalModel<Alloca
     }
 };
 
+struct CastOpInterpreter : public InterpreterOpInterface::ExternalModel<CastOpInterpreter, memref::CastOp> {
+    static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
+        MemRefAllocation src_alloc = operands[0].getData<MemRefAllocation>().front();
+        MultiArray       src       = restoreFromMemManager(operands[0], interpreter);
+        auto             dst_type  = mlir::dyn_cast<mlir::BaseMemRefType>(op->getResult(0).getType());
+
+        if ( src.getDims().size() != dst_type.getShape().size() ) {
+            return interpreter.createErrorResult("Rank must be preserved in memref.cast");
+        }
+
+        // NOTE: memref.cast primarily appears to be used to erase/concrete specific dimensions
+        // Our MultiArray must know all of its dimensions during instantiation
+        // The cast instruction is essentially a carbon copy of src
+        // We do keep the destination type, since that informs how static/dynamic dimensions are filled in later on
+        uint64_t dst_vaddr = interpreter.allocateInMemManager(src_alloc.size);
+        interpreter.copyInMemManager(src_alloc.vaddr, dst_vaddr, src_alloc.size);
+        MemRefAllocation dst_alloc  = MemRefAllocation(dst_vaddr, src_alloc.size);
+        auto             evalResult = interpreter.createEvalValue(dst_type, &dst_alloc, sizeof(dst_alloc));
+        return interpreter.createBindValueResult(evalResult);
+    }
+};
+
 struct CopyOpInterpreter : public InterpreterOpInterface::ExternalModel<CopyOpInterpreter, memref::CopyOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         MemRefAllocation src = operands[0].getData<MemRefAllocation>().front();
@@ -195,7 +206,7 @@ struct LoadOpInterpreter : public InterpreterOpInterface::ExternalModel<LoadOpIn
         // operands = [val_to_store, memref, idx1, idx2 ...]
         // Get indices from remaining operands
         llvm::SmallVector<intptr_t> indices;
-        for ( int i = 1; i < operands.size(); i++ ) {
+        for ( size_t i = 1; i < operands.size(); i++ ) {
             intptr_t dim = operands[i].getData<intptr_t>().front();
             indices.push_back(dim);
         }
@@ -266,7 +277,7 @@ struct StoreOpInterpreter : public InterpreterOpInterface::ExternalModel<StoreOp
 
         // Get indices from remaining operands
         llvm::SmallVector<intptr_t> indices;
-        for ( int i = 2; i < operands.size(); i++ ) {
+        for ( size_t i = 2; i < operands.size(); i++ ) {
             intptr_t dim = operands[i].getData<intptr_t>().front();
             indices.push_back(dim);
         }
@@ -279,7 +290,7 @@ struct StoreOpInterpreter : public InterpreterOpInterface::ExternalModel<StoreOp
                 buff.at<intptr_t>(indices) = val;
             }
             else if ( isa<FloatType>(elem_type) ) {
-                llvm::APFloat val               = operands[0].getData<llvm::APFloat>().front();
+                llvm::APFloat val               = operands[0].getFloatData();
                 buff.at<llvm::APFloat>(indices) = val;
             }
             else if ( elem_type.isInteger(1) ) {
@@ -287,7 +298,7 @@ struct StoreOpInterpreter : public InterpreterOpInterface::ExternalModel<StoreOp
                 buff.at<char>(indices) = val;
             }
             else if ( isa<IntegerType>(elem_type) ) {
-                llvm::APInt val               = operands[0].getData<llvm::APInt>().front();
+                llvm::APInt val               = operands[0].getIntegerData();
                 buff.at<llvm::APInt>(indices) = val;
             }
         } catch ( std::exception& e ) {
@@ -307,6 +318,7 @@ struct StoreOpInterpreter : public InterpreterOpInterface::ExternalModel<StoreOp
 void MemRefInterpreter::attachInterface(MLIRContext& context) {
     memref::AllocOp::attachInterface<AllocOpInterpreter>(context);
     memref::AllocaOp::attachInterface<AllocaOpInterpreter>(context);
+    memref::CastOp::attachInterface<CastOpInterpreter>(context);
     memref::CopyOp::attachInterface<CopyOpInterpreter>(context);
     memref::DeallocOp::attachInterface<DeallocOpInterpreter>(context);
     memref::DimOp::attachInterface<DimOpInterpreter>(context);

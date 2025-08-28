@@ -182,10 +182,3 @@ EvalValue Interpreter::createEvalValue(Type type, size_t dataSizeInBytes) {
     auto implPtr = llvm::makeIntrusiveRefCnt<detail::EvalValueImpl>(type, dataSizeInBytes);
     return EvalValue(implPtr.get());
 }
-
-EvalValue Interpreter::createEvalValue(Type type, const void* data, size_t dataSizeInBytes) {
-    auto implPtr = llvm::makeIntrusiveRefCnt<detail::EvalValueImpl>(
-        type, llvm::ArrayRef<char>(static_cast<const char*>(data), dataSizeInBytes)
-    );
-    return EvalValue(implPtr.get());
-}
