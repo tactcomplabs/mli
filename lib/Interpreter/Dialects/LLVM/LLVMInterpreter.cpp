@@ -1050,7 +1050,8 @@ struct LLVMCountLeadingZerosOpInterpreter
         llvm::outs() << "Interpreting LLVM::CountLeadingZeros\n";
         const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        unsigned result = lhs.countLeadingZeros();
+        unsigned zeros = lhs.countLeadingZeros();
+        const APInt result = APInt(op->getResult(0).getType().getIntOrFloatBitWidth(), zeros, isSigned);
         mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
         auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -1066,7 +1067,8 @@ struct LLVMCountTrailingZerosOpInterpreter
         llvm::outs() << "Interpreting LLVM::CountLeadingZeros\n";
         const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        unsigned result = lhs.countTrailingZeros();
+        unsigned zeros = lhs.countTrailingZeros();
+        const APInt result = APInt(op->getResult(0).getType().getIntOrFloatBitWidth(), zeros, isSigned);
         mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
         auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -1082,7 +1084,8 @@ struct LLVMCtPopOpInterpreter : public InterpreterOpInterface::ExternalModel<LLV
         const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
 
-        unsigned result = lhs.popcount();
+        unsigned pop = lhs.popcount();
+        const APInt result = APInt(op->getResult(0).getType().getIntOrFloatBitWidth(), pop, isSigned);
         mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
         auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));

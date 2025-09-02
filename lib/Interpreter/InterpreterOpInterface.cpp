@@ -2,6 +2,7 @@
 
 #include "llvm/Support/Signals.h"
 #include "llvm/Support/raw_ostream.h"
+#include "MLIFormat.h"
 
 /// Include the definitions of the interpreter op interface.
 #include "mlir/Interpreter/InterpreterOpInterface.cpp.inc"
@@ -38,7 +39,7 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& os, const EvalValue& val) {
     // Handle float types
     else if ( mlir::isa<mlir::FloatType>(valType) ) {
         APFloat num = val.getFloatData();
-        num.print(os);
+        os << mli::fmt::to_string(num);
     }
     // Handle pointer types
     else if ( mlir::isa<mlir::LLVM::LLVMPointerType>(valType) ) {

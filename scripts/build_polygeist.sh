@@ -25,8 +25,8 @@ git submodule update --init --recursive
 #─── Configure & Build ───────────────────────────────────────────────────────
 mkdir -p build && cd build
 echo "⏳ Configuring with CMake → Ninja generator..."
-cmake -G Ninja "../llvm-project/llvm" \
-  -DLLVM_ENABLE_PROJECTS="clang;mlir" \
+cmake "../llvm-project/llvm" \
+  -DLLVM_ENABLE_PROJECTS="clang;mlir;lldb" \
   -DLLVM_EXTERNAL_PROJECTS="polygeist" \
   -DLLVM_EXTERNAL_POLYGEIST_SOURCE_DIR=".." \
   -DLLVM_TARGETS_TO_BUILD="host" \

@@ -21,6 +21,7 @@
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/APInt.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/raw_ostream.h"
 #include <iostream>
 #include <string>
@@ -43,7 +44,14 @@ inline std::string to_string(T& val, bool isSigned = true) {
     }
     else if constexpr ( std::is_same_v<stripped_type, llvm::APFloat> ) {
         llvm::raw_string_ostream os(output);
-        val.print(os);
+#if NEW_LLVM
+        os << val;
+#else
+        // Old versions of LLVM automatically put a \n when calling print(), which we don't want
+        llvm::SmallVector<char, 16> Buffer;
+        val.toString(Buffer);
+        os << Buffer;
+#endif
         return os.str();
     }
     else {
