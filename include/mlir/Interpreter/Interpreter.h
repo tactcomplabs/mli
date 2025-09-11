@@ -138,7 +138,7 @@ class Interpreter {
     //===--------------------------------------------------------------------===//
 
     /// Get the MLIR context.
-    MLIRContext& getContext() { return *context; }
+    MLIRContext* getContext() { return context; }
 
     /// Get the ModuleOp.
     ModuleOp getModule() { return module; }
@@ -286,7 +286,32 @@ class Interpreter {
     EvalValue createEvalValue(Type type, size_t dataSizeInBytes);
 
     /// Create an EvalValue and initialize with `data`.
-    EvalValue createEvalValue(Type type, const void* data, size_t dataSizeInBytes);
+    template<typename T>
+    EvalValue createEvalValue(Type type, const T* data, size_t dataSizeInBytes) {
+        if constexpr ( std::is_same_v<T, llvm::APInt> || std::is_same_v<T, llvm::APSInt> ) {
+            if ( type.getIntOrFloatBitWidth() > 64 ) {
+                auto implPtr = llvm::makeIntrusiveRefCnt<detail::EvalValueImpl>(
+                    type,
+                    llvm::ArrayRef<char>(reinterpret_cast<const char*>(data->getRawData()), sizeof(uint64_t) * data->getNumWords())
+                );
+                return EvalValue(implPtr.get());
+            }
+        }
+        else if constexpr ( std::is_same_v<T, llvm::APFloat> ) {
+            if ( type.getIntOrFloatBitWidth() > 64 ) {
+                APInt bits    = data->bitcastToAPInt();
+                auto  implPtr = llvm::makeIntrusiveRefCnt<detail::EvalValueImpl>(
+                    type,
+                    llvm::ArrayRef<char>(reinterpret_cast<const char*>(bits.getRawData()), sizeof(uint64_t) * bits.getNumWords())
+                );
+                return EvalValue(implPtr.get());
+            }
+        }
+        auto implPtr = llvm::makeIntrusiveRefCnt<detail::EvalValueImpl>(
+            type, llvm::ArrayRef<char>(reinterpret_cast<const char*>(data), dataSizeInBytes)
+        );
+        return EvalValue(implPtr.get());
+    }
 
     /// Create an EvalValue and initialize with `data`.
     template<typename T>
@@ -296,6 +321,21 @@ class Interpreter {
 
     // TODO: Change to smart pointer
     MemoryManager& getMemManager() { return *MemManager; }
+
+    // Wrappers for MemoryManager's operations
+    uint64_t allocateInMemManager(const size_t size) { return MemManager->allocate(size); }
+
+    void freeInMemManager(const uint64_t addr) { MemManager->free(addr); }
+
+    void readFromMemManager(const uint64_t addr, void* dst, const size_t size) const { MemManager->read(addr, dst, size); }
+
+    void writeToMemManager(const uint64_t addr, const void* src, const size_t size) const { MemManager->write(addr, src, size); }
+
+    void forceWriteToMemManager(const uint64_t addr, const void* src, const size_t size) const {
+        MemManager->force_write(addr, src, size);
+    }
+
+    void copyInMemManager(const uint64_t src, const uint64_t dst, const size_t size) const { MemManager->copy(src, dst, size); }
 
   private:
     /// Mapping from SSA names to evaluated value. This represents a value lookup

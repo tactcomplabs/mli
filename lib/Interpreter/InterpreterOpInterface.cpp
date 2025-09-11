@@ -2,6 +2,7 @@
 
 #include "llvm/Support/Signals.h"
 #include "llvm/Support/raw_ostream.h"
+#include "MLIFormat.h"
 
 /// Include the definitions of the interpreter op interface.
 #include "mlir/Interpreter/InterpreterOpInterface.cpp.inc"
@@ -17,7 +18,7 @@ EvalError::EvalError(llvm::StringRef message, bool shouldPrintStackTrace) : mess
 llvm::raw_ostream& operator<<(llvm::raw_ostream& os, const EvalValue& val) {
     // Special case i1 = bool
     auto valType = val.getType();
-    if ( valType.isInteger(sizeof(bool)) ) {
+    if ( valType.isInteger(1) ) {
         auto data = val.getData<bool>();
         if ( !data.empty() ) {
             os << data[0];
@@ -32,17 +33,13 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& os, const EvalValue& val) {
     }
     // Handle integers
     else if ( valType.isIntOrIndex() ) {
-        auto data = val.getData<APInt>();
-        if ( !data.empty() ) {
-            os << data[0];
-        }
+        APInt num = val.getIntegerData();
+        os << num;
     }
     // Handle float types
     else if ( mlir::isa<mlir::FloatType>(valType) ) {
-        auto data = val.getData<APFloat>();
-        if ( !data.empty() ) {
-            data[0].print(os);
-        }
+        APFloat num = val.getFloatData();
+        os << mli::fmt::to_string(num);
     }
     // Handle pointer types
     else if ( mlir::isa<mlir::LLVM::LLVMPointerType>(valType) ) {

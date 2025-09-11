@@ -63,15 +63,16 @@ struct SCFForOpInterpreter : public InterpreterOpInterface::ExternalModel<SCFFor
 
         // The bounds and steps can be either index or integer types
         // We'll use integers, but must get them as intptr_t if they're listed as indices to avoid UB in casting
-        APInt loopVars[3];
-        for ( int i = 0; i < 3; i++ ) {
+        constexpr int LOOP_ARGS = 3;
+        APInt         loopVars[LOOP_ARGS];
+        for ( size_t i = 0; i < LOOP_ARGS; i++ ) {
             Type t = operands[i].getType();
             if ( t.isIndex() ) {
                 intptr_t val_as_idx = operands[i].getData<intptr_t>().front();
                 loopVars[i]         = APInt(8 * sizeof(intptr_t), val_as_idx);
             }
             else {
-                loopVars[i] = getIntegerData(operands[i]);
+                loopVars[i] = operands[i].getIntegerData();
             }
         }
 
@@ -86,8 +87,8 @@ struct SCFForOpInterpreter : public InterpreterOpInterface::ExternalModel<SCFFor
 
         // Arguments to be carried through each iteration, if any
         SmallVector<EvalValue, 4> carried(operands.begin() + 3, operands.end());
-
-        for ( APInt iv = lb; iv.slt(ub); iv += step ) {
+        APInt                     iv = lb;
+        for ( ; iv.slt(ub); iv += step ) {
             SmallVector<EvalValue, 4> args;
             args.push_back(makeIntEvalValue(interp, forOp.getInductionVar().getType(), iv));
             args.append(carried);

@@ -149,39 +149,19 @@ inline bool validateFunctionArguments(mlir::func::FuncOp funcOp, llvm::ArrayRef<
     return true;
 }
 
-/// Get integer data from an mlir::EvalValue.
-inline APInt getIntegerData(const mlir::EvalValue& val, bool isSigned = false) {
-    return val.getData<APInt>().front();
-}
-
-/// Get float data from an mlir::EvalValue.
-inline APFloat getFloatData(const mlir::EvalValue& val) {
-    return val.getData<APFloat>().front();
-}
-
-/// Get semantics for a given MLIR type.
-/// These semantics are used in constructing/converting APFloat types.
-inline Semantics getFloatSemantics(const mlir::Type& result_type) {
-    if ( result_type.isF16() ) {  // 16-bit float.
-        return Semantics::S_IEEEhalf;
-    }
-    else if ( result_type.isBF16() ) {  // 16-bit brain float.
-        return Semantics::S_BFloat;
-    }
-    else if ( result_type.isF32() ) {  // Standard 32-bit float.
-        return Semantics::S_IEEEsingle;
-    }
-    return Semantics::S_IEEEdouble;
-}
-
 /// Compute a unary floating point operation (e.g. std::sqrt, std::cos).
 /// The result will maintain the original number's semantics.
 inline APFloat compute(const APFloat& num, double (*func)(double)) {
-    double tmp     = num.convertToDouble();
+    bool    losesInfo;
+    APFloat copy = num;
+    if (APFloatBase::SemanticsToEnum(num.getSemantics()) == APFloatBase::Semantics::S_IEEEquad) {
+        llvm::outs() << mli::fmt::warning("Loss of precision, converting FP128 to IEEE double\n");
+        copy.convert(APFloatBase::EnumToSemantics(APFloatBase::Semantics::S_IEEEdouble), RoundingMode::TowardZero, &losesInfo );
+    }
+    double tmp     = copy.convertToDouble();
     tmp            = func(tmp);
     APFloat result = APFloat(tmp);
-    bool    losesInfo;
-    result.convert(num.getSemantics(), llvm::RoundingMode::TowardZero, &losesInfo);
+    result.convert(num.getSemantics(), RoundingMode::TowardZero, &losesInfo);
     return result;
 }
 
@@ -193,7 +173,7 @@ inline APFloat compute(const APFloat& lhs, const APFloat& rhs, double (*func)(do
     tmp1           = func(tmp1, tmp2);
     APFloat result = APFloat(tmp1);
     bool    losesInfo;
-    result.convert(lhs.getSemantics(), llvm::RoundingMode::TowardZero, &losesInfo);
+    result.convert(lhs.getSemantics(), RoundingMode::TowardZero, &losesInfo);
     return result;
 }
 
@@ -205,7 +185,7 @@ inline APFloat compute(const APFloat& lhs, const APInt& rhs, double (*func)(doub
     tmp1           = func(tmp1, tmp2);
     APFloat result = APFloat(tmp1);
     bool    losesInfo;
-    result.convert(lhs.getSemantics(), llvm::RoundingMode::TowardZero, &losesInfo);
+    result.convert(lhs.getSemantics(), RoundingMode::TowardZero, &losesInfo);
     return result;
 }
 

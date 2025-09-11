@@ -14,6 +14,7 @@
 #ifndef MLIR_INTERFACES_INTERPRETEROPINTERFACE_H_
 #define MLIR_INTERFACES_INTERPRETEROPINTERFACE_H_
 
+#include "mlir/CustomTypes.h"
 #include "mlir/Dialect/LLVMIR/LLVMTypes.h"
 #include "mlir/Dialect/Traits.h"
 #include "mlir/IR/OpDefinition.h"
@@ -98,6 +99,55 @@ class EvalValue {
         size_t dataSizeInBytes = getRawDataSizeInBytes();
         assert(dataSizeInBytes % sizeof(DataType) == 0);
         return llvm::ArrayRef<DataType>(reinterpret_cast<const DataType*>(getRawData()), dataSizeInBytes / sizeof(DataType));
+    }
+
+    llvm::APInt getIntegerData(bool isSigned = false) const {
+        unsigned numBits = getType().getIntOrFloatBitWidth();
+        // Fast case, where APInt doesn't make a heap allocation
+        // Interpreter can store APInt& as raw bytes without issue
+        if ( numBits <= 64 ) {
+            return getData<APInt>().front();
+        }
+        // Slow case, where APInt makes a heap allocation
+        // Interpreter stores uint64_t* buffer to all bits of number
+        // NOTE: This calls the copy ctor when invoked, so EvalValue doesn't own this like in getData<T>
+        const uint64_t* raw = reinterpret_cast<const uint64_t*>(getRawData());
+        return APInt(numBits, llvm::ArrayRef<uint64_t>(raw, raw + getRawDataSizeInBytes()));
+    }
+
+    llvm::APFloat getFloatData() const {
+        // Fast case, where APFloat doesn't make a heap allocation
+        // Interpreter can store APFloat& as raw bytes without issue
+        unsigned numBits = getType().getIntOrFloatBitWidth();
+        if ( numBits <= 64 ) {
+            return getData<APFloat>().front();
+        }
+        // Slow case, APFloat allocates on heap
+        // APFloat doesn't provide an interface for examining the raw storage of the float
+        // However, we can bitcast to an APInt without losing bits
+        // Use the same strategy as getIntegerData()
+        const uint64_t* raw      = reinterpret_cast<const uint64_t*>(getRawData());
+        const APInt     raw_bits = APInt(numBits, llvm::ArrayRef<uint64_t>(raw, numBits / 8));
+        return APFloat(llvm::APFloatBase::EnumToSemantics(getFloatSemantics(getType())), raw_bits);
+    }
+
+    static llvm::APFloatBase::Semantics getFloatSemantics(Type t) {
+        if ( t.isF16() ) {  // 16-bit float.
+            return llvm::APFloatBase::Semantics::S_IEEEhalf;
+        }
+        else if ( t.isBF16() ) {  // 16-bit brain float.
+            return llvm::APFloatBase::Semantics::S_BFloat;
+        }
+        else if ( t.isF32() ) {  // Standard 32-bit float.
+            return llvm::APFloatBase::Semantics::S_IEEEsingle;
+        }
+        else if ( t.isF64() ) {  // Standard 64-bit float
+            return llvm::APFloatBase::Semantics::S_IEEEdouble;
+        }
+        else if ( t.isF128() ) {  // IEEE 128-bit float
+            return llvm::APFloatBase::Semantics::S_IEEEquad;
+        }
+        llvm_unreachable("Unrecognized floating point type");
     }
 
     /// Returns whether this handle holds a null value.

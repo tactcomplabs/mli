@@ -40,7 +40,7 @@ class LLVMReturnOpInterpreter : public InterpreterOpInterface::ExternalModel<LLV
 struct LLVMFNegOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMFNegOpInterpreter, LLVM::FNegOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
         const APFloat result = -lhs;
         mli::fmt::printResult(llvm::outs(), result);
@@ -55,9 +55,9 @@ struct LLVMAddOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMA
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0]);
+        const APInt lhs = operands[0].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1]);
+        const APInt rhs = operands[1].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs + rhs;
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -73,9 +73,9 @@ struct LLVMAddOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMA
 struct LLVMFAddOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMFAddOpInterpreter, LLVM::FAddOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
         const APFloat result = lhs + rhs;
         mli::fmt::printResult(llvm::outs(), result);
@@ -92,9 +92,9 @@ struct LLVMSubOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMS
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
 
-        const APInt lhs = getIntegerData(operands[0]);
+        const APInt lhs = operands[0].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1]);
+        const APInt rhs = operands[1].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs - rhs;
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -107,9 +107,9 @@ struct LLVMSubOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMS
 struct LLVMFSubOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMFSubOpInterpreter, LLVM::FSubOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
         const APFloat result = lhs - rhs;
         mli::fmt::printResult(llvm::outs(), result);
@@ -123,9 +123,9 @@ struct LLVMMulOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMM
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0]);
+        const APInt lhs = operands[0].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1]);
+        const APInt rhs = operands[1].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs * rhs;
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -140,9 +140,9 @@ struct LLVMMulOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMM
 struct LLVMFMulOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMFMulOpInterpreter, LLVM::FMulOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
         const APFloat result = lhs * rhs;
         mli::fmt::printResult(llvm::outs(), result);
@@ -157,9 +157,9 @@ struct LLVMUDivOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs.udiv(rhs);
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -174,9 +174,9 @@ struct LLVMSDivOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         llvm::outs() << "Interpreting " << op->getName() << "\n";
-        const APInt lhs = getIntegerData(operands[0]);
+        const APInt lhs = operands[0].getIntegerData();
         lhs.print(llvm::outs() << "lhs: ", isSigned);
-        const APInt rhs = getIntegerData(operands[1]);
+        const APInt rhs = operands[1].getIntegerData();
         rhs.print(llvm::outs() << "rhs: ", isSigned);
         const APInt result = lhs.sdiv(rhs);
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -190,9 +190,9 @@ struct LLVMSDivOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
 struct LLVMFDivOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMFDivOpInterpreter, LLVM::FDivOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
         const APFloat result = lhs / rhs;
         mli::fmt::printResult(llvm::outs(), result);
@@ -207,9 +207,9 @@ struct LLVMURemOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs.urem(rhs);
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -224,9 +224,9 @@ struct LLVMSRemOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0]);
+        const APInt lhs = operands[0].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1]);
+        const APInt rhs = operands[1].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs.srem(rhs);
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -240,9 +240,9 @@ struct LLVMSRemOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
 struct LLVMFRemOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMFRemOpInterpreter, LLVM::FRemOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
 
         APFloat result = lhs;
@@ -264,9 +264,9 @@ struct LLVMICmpOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
                         att == LLVM::ICmpPredicate::sge;
 
         llvm::outs() << "Interpreting LLVM::ICmp\n";
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
 
         bool result;
@@ -296,9 +296,9 @@ struct LLVMFCmpOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
         // FCmp has various attributes specifying the type of comparison to make
         LLVM::FCmpPredicate att = op->getAttrOfType<LLVM::FCmpPredicateAttr>("predicate").getValue();
         llvm::outs() << "Interpreting LLVM::FCmp\n";
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
 
         bool lhs_NaN = lhs.isNaN();
@@ -337,9 +337,9 @@ struct LLVMShlOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMS
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0]);
+        const APInt lhs = operands[0].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1]);
+        const APInt rhs = operands[1].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs.shl(rhs);
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -354,9 +354,9 @@ struct LLVMLShrOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0]);
+        const APInt lhs = operands[0].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1]);
+        const APInt rhs = operands[1].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs.lshr(rhs);
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -372,9 +372,9 @@ struct LLVMAShrOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0]);
+        const APInt lhs = operands[0].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1]);
+        const APInt rhs = operands[1].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs.ashr(rhs);
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -389,9 +389,9 @@ struct LLVMAndOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMA
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0]);
+        const APInt lhs = operands[0].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1]);
+        const APInt rhs = operands[1].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs & rhs;
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -406,9 +406,9 @@ struct LLVMOrOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMOr
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0]);
+        const APInt lhs = operands[0].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1]);
+        const APInt rhs = operands[1].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs | rhs;
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -423,9 +423,9 @@ struct LLVMXOrOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMX
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0]);
+        const APInt lhs = operands[0].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1]);
+        const APInt rhs = operands[1].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs ^ rhs;
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -440,7 +440,7 @@ struct LLVMTruncOpInterpreter : public InterpreterOpInterface::ExternalModel<LLV
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
         unsigned    result_width = op->getOpResult(0).getType().getIntOrFloatBitWidth();
         const APInt result       = lhs.trunc(result_width);
@@ -456,13 +456,15 @@ struct LLVMTruncOpInterpreter : public InterpreterOpInterface::ExternalModel<LLV
 struct LLVMFPTruncOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMFPTruncOpInterpreter, LLVM::FPTruncOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
 
         bool    loseInfo;
         auto    result_type = op->getOpResult(0).getType();
         APFloat result      = lhs;
-        result.convert(llvm::APFloatBase::EnumToSemantics(getFloatSemantics(result_type)), llvm::APFloat::rmTowardZero, &loseInfo);
+        result.convert(
+            llvm::APFloatBase::EnumToSemantics(EvalValue::getFloatSemantics(result_type)), llvm::APFloat::rmTowardZero, &loseInfo
+        );
 
         mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
@@ -476,7 +478,7 @@ struct LLVMZExtOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;  // garbage value
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
 
         unsigned    result_width = op->getResult(0).getType().getIntOrFloatBitWidth();
@@ -493,7 +495,7 @@ struct LLVMSExtOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
 
         unsigned result_width = op->getResult(0).getType().getIntOrFloatBitWidth();
@@ -518,16 +520,16 @@ struct LLVMBitcastOpInterpreter : public InterpreterOpInterface::ExternalModel<L
             evalResult = operands[0];
         }
         else if ( llvm::isa<mlir::FloatType>(src_type) ) {  // src float, ret int
-            const APFloat lhs = getFloatData(operands[0]);
+            const APFloat lhs = operands[0].getFloatData();
             mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
             const APInt result = lhs.bitcastToAPInt();
             mli::fmt::printResult(llvm::outs(), result);
             evalResult = interpreter.createEvalValue(result_type, &result, sizeof(result));
         }
         else if ( llvm::isa<mlir::IntegerType>(src_type) ) {  // src int, ret float
-            const APInt lhs = getIntegerData(operands[0]);
+            const APInt lhs = operands[0].getIntegerData();
             mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-            Semantics     s      = getFloatSemantics(result_type);
+            Semantics     s      = EvalValue::getFloatSemantics(result_type);
             const APFloat result = APFloat(llvm::APFloat::EnumToSemantics(s), lhs);
             mli::fmt::printResult(llvm::outs(), result);
             evalResult = interpreter.createEvalValue(result_type, &result, sizeof(result));
@@ -542,13 +544,15 @@ struct LLVMBitcastOpInterpreter : public InterpreterOpInterface::ExternalModel<L
 struct LLVMFPExtOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMFPExtOpInterpreter, LLVM::FPExtOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
 
         bool    loseInfo;
         auto    result_type = op->getOpResult(0).getType();
         APFloat result      = lhs;
-        result.convert(llvm::APFloatBase::EnumToSemantics(getFloatSemantics(result_type)), llvm::APFloat::rmTowardZero, &loseInfo);
+        result.convert(
+            llvm::APFloatBase::EnumToSemantics(EvalValue::getFloatSemantics(result_type)), llvm::APFloat::rmTowardZero, &loseInfo
+        );
 
         mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
@@ -561,7 +565,7 @@ struct LLVMFPExtOpInterpreter : public InterpreterOpInterface::ExternalModel<LLV
 struct LLVMFPToSIOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMFPToSIOpInterpreter, LLVM::FPToSIOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
 
         unsigned result_width = op->getResult(0).getType().getIntOrFloatBitWidth();
@@ -580,7 +584,7 @@ struct LLVMFPToSIOpInterpreter : public InterpreterOpInterface::ExternalModel<LL
 struct LLVMFPToUIOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMFPToUIOpInterpreter, LLVM::FPToUIOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         lhs.print(llvm::outs() << "lhs: ");
 
         unsigned result_width = op->getResult(0).getType().getIntOrFloatBitWidth();
@@ -600,10 +604,10 @@ struct LLVMSIToFPOpInterpreter : public InterpreterOpInterface::ExternalModel<LL
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
 
-        Semantics sem    = getFloatSemantics(op->getResult(0).getType());
+        Semantics sem    = EvalValue::getFloatSemantics(op->getResult(0).getType());
         APFloat   result = APFloat(llvm::APFloatBase::EnumToSemantics(sem));
         result.convertFromAPInt(lhs, isSigned, llvm::RoundingMode::TowardZero);
 
@@ -619,10 +623,10 @@ struct LLVMUIToFPOpInterpreter : public InterpreterOpInterface::ExternalModel<LL
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
 
-        Semantics sem    = getFloatSemantics(op->getResult(0).getType());
+        Semantics sem    = EvalValue::getFloatSemantics(op->getResult(0).getType());
         APFloat   result = APFloat(llvm::APFloatBase::EnumToSemantics(sem));
         result.convertFromAPInt(lhs, isSigned, llvm::RoundingMode::TowardZero);
 
@@ -638,7 +642,7 @@ struct LLVMAbsOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMA
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
         const APInt result = lhs.abs();
         // Create an EvalValue from the result
@@ -651,7 +655,7 @@ struct LLVMAbsOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMA
 struct LLVMCosOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMCosOpInterpreter, LLVM::CosOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
 
         const APFloat result = compute(lhs, std::cos);
@@ -666,7 +670,7 @@ struct LLVMCosOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMC
 struct LLVMExp2OpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMExp2OpInterpreter, LLVM::Exp2Op> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
         const APFloat result = compute(lhs, std::exp2);
         mli::fmt::printResult(llvm::outs(), result);
@@ -680,7 +684,7 @@ struct LLVMExp2OpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
 struct LLVMExpOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMExpOpInterpreter, LLVM::ExpOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
         const APFloat result = compute(lhs, std::exp);
         mli::fmt::printResult(llvm::outs(), result);
@@ -694,7 +698,7 @@ struct LLVMExpOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVME
 struct LLVMFAbsOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMFAbsOpInterpreter, LLVM::FAbsOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
         const APFloat result = llvm::abs(lhs);
         mli::fmt::printResult(llvm::outs(), result);
@@ -708,7 +712,7 @@ struct LLVMFAbsOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
 struct LLVMFCeilOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMFCeilOpInterpreter, LLVM::FCeilOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
 
         APFloat result = lhs;
@@ -724,7 +728,7 @@ struct LLVMFCeilOpInterpreter : public InterpreterOpInterface::ExternalModel<LLV
 struct LLVMFFloorOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMFFloorOpInterpreter, LLVM::FFloorOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
 
         APFloat result = lhs;
@@ -740,11 +744,11 @@ struct LLVMFFloorOpInterpreter : public InterpreterOpInterface::ExternalModel<LL
 struct LLVMFMAOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMFMAOpInterpreter, LLVM::FMAOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
-        APFloat result = getFloatData(operands[2]);
+        APFloat result = operands[2].getFloatData();
         result.print(llvm::outs() << "result (before FMA): ");
 
         result = lhs * rhs + result;
@@ -759,7 +763,7 @@ struct LLVMFMAOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMF
 struct LLVMLog10OpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMLog10OpInterpreter, LLVM::Log10Op> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
         const APFloat result = compute(lhs, std::log10);
         mli::fmt::printResult(llvm::outs(), result);
@@ -773,7 +777,7 @@ struct LLVMLog10OpInterpreter : public InterpreterOpInterface::ExternalModel<LLV
 struct LLVMLog2OpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMLog2OpInterpreter, LLVM::Log2Op> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
         const APFloat result = compute(lhs, std::log2);
         mli::fmt::printResult(llvm::outs(), result);
@@ -787,7 +791,7 @@ struct LLVMLog2OpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
 struct LLVMLogOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMLogOpInterpreter, LLVM::LogOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
         const APFloat result = compute(lhs, std::log);
         mli::fmt::printResult(llvm::outs(), result);
@@ -801,9 +805,9 @@ struct LLVMLogOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVML
 struct LLVMMinNumOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMMinNumOpInterpreter, LLVM::MinNumOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         llvm::outs() << "Interpreting LLVM::MinNum\n";
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
         const APFloat result = llvm::minnum(lhs, rhs);
         mli::fmt::printResult(llvm::outs(), result);
@@ -817,9 +821,9 @@ struct LLVMMinNumOpInterpreter : public InterpreterOpInterface::ExternalModel<LL
 struct LLVMMinimumOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMMinimumOpInterpreter, LLVM::MinimumOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         llvm::outs() << "Interpreting LLVM::Minimum\n";
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
         const APFloat result = llvm::minimum(lhs, rhs);
         mli::fmt::printResult(llvm::outs(), result);
@@ -833,9 +837,9 @@ struct LLVMMinimumOpInterpreter : public InterpreterOpInterface::ExternalModel<L
 struct LLVMMaximumOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMMaximumOpInterpreter, LLVM::MaximumOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         llvm::outs() << "Interpreting LLVM::Maximum\n";
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
         const APFloat result = llvm::maximum(lhs, rhs);
         mli::fmt::printResult(llvm::outs(), result);
@@ -849,9 +853,9 @@ struct LLVMMaximumOpInterpreter : public InterpreterOpInterface::ExternalModel<L
 struct LLVMMaxNumOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMMaxNumOpInterpreter, LLVM::MaxNumOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         llvm::outs() << "Interpreting LLVM::MaxNum\n";
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
         const APFloat result = llvm::maxnum(lhs, rhs);
         mli::fmt::printResult(llvm::outs(), result);
@@ -865,7 +869,7 @@ struct LLVMMaxNumOpInterpreter : public InterpreterOpInterface::ExternalModel<LL
 struct LLVMSinOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMSinOpInterpreter, LLVM::SinOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         mli::fmt::printOpName(llvm::outs(), op->getName().getStringRef().str());
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
         const APFloat result = compute(lhs, std::sin);
         mli::fmt::printResult(llvm::outs(), result);
@@ -879,7 +883,7 @@ struct LLVMSinOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMS
 struct LLVMSqrtOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMSqrtOpInterpreter, LLVM::SqrtOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         llvm::outs() << "Interpreting LLVM::Sqrt\n";
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
         const APFloat result = compute(lhs, std::sqrt);
         mli::fmt::printResult(llvm::outs(), result);
@@ -893,9 +897,9 @@ struct LLVMSqrtOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
 struct LLVMPowOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMPowOpInterpreter, LLVM::PowOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         llvm::outs() << "Interpreting LLVM::Pow\n";
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
         const APFloat result = compute(lhs, rhs, std::pow);
         mli::fmt::printResult(llvm::outs(), result);
@@ -909,9 +913,9 @@ struct LLVMPowOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMP
 struct LLVMPowIOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMPowIOpInterpreter, LLVM::PowIOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         llvm::outs() << "Interpreting LLVM::PowI\n";
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APInt rhs = getIntegerData(operands[1]);
+        const APInt rhs = operands[1].getIntegerData();
         mli::fmt::printOperand(llvm::outs(), "rhs", lhs);
         const APFloat result = compute(lhs, rhs, std::pow);
         mli::fmt::printResult(llvm::outs(), result);
@@ -926,9 +930,9 @@ struct LLVMSMaxOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         llvm::outs() << "Interpreting LLVM::SMax\n";
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs.sgt(rhs) ? lhs : rhs;
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -944,9 +948,9 @@ struct LLVMSMinOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = true;
         llvm::outs() << "Interpreting LLVM::SMin\n";
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs.slt(rhs) ? lhs : rhs;
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -961,9 +965,9 @@ struct LLVMUMaxOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         llvm::outs() << "Interpreting LLVM::UMax\n";
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs.ugt(rhs) ? lhs : rhs;
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -978,9 +982,9 @@ struct LLVMUMinOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVM
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         llvm::outs() << "Interpreting LLVM::UMin\n";
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        const APInt rhs = getIntegerData(operands[1], isSigned);
+        const APInt rhs = operands[1].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs, isSigned);
         const APInt result = lhs.ult(rhs) ? lhs : rhs;
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -995,7 +999,7 @@ struct LLVMBitReverseOpInterpreter : public InterpreterOpInterface::ExternalMode
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         llvm::outs() << "Interpreting LLVM::BitReverse\n";
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
         const APInt result = lhs.reverseBits();
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -1010,7 +1014,7 @@ struct LLVMByteSwapOpInterpreter : public InterpreterOpInterface::ExternalModel<
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         llvm::outs() << "Interpreting LLVM::ByteSwap\n";
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
         const APInt result = lhs.byteSwap();
         mli::fmt::printResult(llvm::outs(), result, isSigned);
@@ -1024,9 +1028,9 @@ struct LLVMByteSwapOpInterpreter : public InterpreterOpInterface::ExternalModel<
 struct LLVMCopySignOpInterpreter : public InterpreterOpInterface::ExternalModel<LLVMCopySignOpInterpreter, LLVM::CopySignOp> {
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         llvm::outs() << "Interpreting LLVM::CopySign\n";
-        const APFloat lhs = getFloatData(operands[0]);
+        const APFloat lhs = operands[0].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs);
-        const APFloat rhs = getFloatData(operands[1]);
+        const APFloat rhs = operands[1].getFloatData();
         mli::fmt::printOperand(llvm::outs(), "rhs", rhs);
 
         APFloat result = lhs;
@@ -1044,9 +1048,10 @@ struct LLVMCountLeadingZerosOpInterpreter
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         llvm::outs() << "Interpreting LLVM::CountLeadingZeros\n";
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        unsigned result = lhs.countLeadingZeros();
+        unsigned zeros = lhs.countLeadingZeros();
+        const APInt result = APInt(op->getResult(0).getType().getIntOrFloatBitWidth(), zeros, isSigned);
         mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
         auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -1060,9 +1065,10 @@ struct LLVMCountTrailingZerosOpInterpreter
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         llvm::outs() << "Interpreting LLVM::CountLeadingZeros\n";
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
-        unsigned result = lhs.countTrailingZeros();
+        unsigned zeros = lhs.countTrailingZeros();
+        const APInt result = APInt(op->getResult(0).getType().getIntOrFloatBitWidth(), zeros, isSigned);
         mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
         auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));
@@ -1075,10 +1081,11 @@ struct LLVMCtPopOpInterpreter : public InterpreterOpInterface::ExternalModel<LLV
     static EvalResult interpret(Operation* op, Interpreter& interpreter, ArrayRef<EvalValue> operands) {
         bool isSigned = false;
         llvm::outs() << "Interpreting LLVM::CtPop\n";
-        const APInt lhs = getIntegerData(operands[0], isSigned);
+        const APInt lhs = operands[0].getIntegerData(isSigned);
         mli::fmt::printOperand(llvm::outs(), "lhs", lhs, isSigned);
 
-        unsigned result = lhs.popcount();
+        unsigned pop = lhs.popcount();
+        const APInt result = APInt(op->getResult(0).getType().getIntOrFloatBitWidth(), pop, isSigned);
         mli::fmt::printResult(llvm::outs(), result);
         // Create an EvalValue from the result
         auto evalResult = interpreter.createEvalValue(op->getResult(0).getType(), &result, sizeof(result));

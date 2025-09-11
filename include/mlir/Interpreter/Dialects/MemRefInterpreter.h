@@ -1,4 +1,4 @@
-//===- SCFInterpreter.h - SCF dialect interpreter -------------*- C++ -*-===//
+//===- MemRefInterpreter.h - MemRef dialect interpreter -------------*- C++ -*-===//
 //
 // Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -16,21 +16,21 @@
 // limitations under the License.
 //===----------------------------------------------------------------------===//
 //
-// This file contains the dialect interpreter declaration for the LLVM dialect.
+// This file contains the dialect interpreter declaration for the MemRef dialect.
 //
 //===----------------------------------------------------------------------===//
-#ifndef MLIR_INTERPRETER_DIALECTS_SCFINTERPRETER_H_
-#define MLIR_INTERPRETER_DIALECTS_SCFINTERPRETER_H_
+#ifndef MLIR_INTERPRETER_DIALECTS_MEMREFINTERPRETER_H_
+#define MLIR_INTERPRETER_DIALECTS_MEMREFINTERPRETER_H_
 
-#include "mlir/Dialect/SCF/IR/SCF.h"
+#include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/IR/MLIRContext.h"
 
 namespace mlir {
 
-/// Dialect interpreter for the LLVM dialect.
-class SCFInterpreter {
+/// Dialect interpreter for the MemRef dialect.
+class MemRefInterpreter {
   public:
-    using Dialect = scf::SCFDialect;
+    using Dialect = memref::MemRefDialect;
     using Context = void;
 
     /// Attach the InterpreterOpInterface to the ops in the Func dialect.
@@ -45,4 +45,4 @@ class SCFInterpreter {
 
 }  // namespace mlir
 
-#endif  // MLIR_INTERPRETER_DIALECTS_LLVMINTERPRETER_H_
+#endif  // MLIR_INTERPRETER_DIALECTS_MEMREFINTERPRETER_H_

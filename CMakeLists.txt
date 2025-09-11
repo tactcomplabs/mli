@@ -51,8 +51,8 @@ include_directories(${MLIR_INCLUDE_DIRS})
 
 # Enable RTTI if needed
 set(LLVM_ENABLE_RTTI ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frtti -Wall")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frtti")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -Wall -Wextra -Wno-unused-parameter -fdiagnostics-color=always")
 
 # Add subdirectories
 add_subdirectory(lib)

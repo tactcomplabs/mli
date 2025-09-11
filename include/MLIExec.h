@@ -32,7 +32,7 @@ static mlir::EvalValue convertArgToEvalValue(
     }
     else if ( mlir::isa<mlir::FloatType>(argType) ) {
         unsigned  width     = argType.getIntOrFloatBitWidth();
-        Semantics s         = mli::getFloatSemantics(argType);
+        Semantics s         = mlir::EvalValue::getFloatSemantics(argType);
         APFloat   float_val = APFloat(APFloatBase::EnumToSemantics(s), argStr);
         llvm::outs() << mli::fmt::dim("Parsing ") << mli::fmt::highlight(argStr) << mli::fmt::dim(" as ")
                      << mli::fmt::type("f" + std::to_string(width)) << "\n";
@@ -50,6 +50,7 @@ static mlir::SmallVector<mlir::EvalValue, 4> prepareArguments(
     mlir::SmallVector<mlir::EvalValue, 4> functionArgs;
     auto&                                 entryBlock = func.getBody().front();
 
+    assert(args.size() == entryBlock.getNumArguments() && "Number of CLI arguments and block arguments differ");
     // Convert command-line arguments to EvalValues
     for ( size_t i = 0; i < args.size(); ++i ) {
         auto arg_type = entryBlock.getArgument(i).getType();

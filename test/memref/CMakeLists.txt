@@ -1,0 +1,13 @@
+if(ENABLE_TESTING)
+  add_mli_test(name_base MEMREF_ALLOC          subdir alloc            mli_args "--args=3,4"      regex "Freed memref allocation [0-9]+")
+  add_mli_test(name_base MEMREF_DIM          subdir dim            mli_args "--args=1"      regex "index = 2")
+  add_mli_test(name_base MEMREF_COPY          subdir copy            mli_args ""      regex "i32 = 8")
+  add_mli_test(name_base MEMREF_LOAD          subdir load            mli_args "--args=1,2"      regex "i32 = 0")
+  add_mli_test(name_base MEMREF_LOAD_BAD_IDX          subdir load            mli_args "--args=3,0"   regex "Index 0 is out of bounds")
+  add_mli_test(name_base MEMREF_STORE          subdir store            mli_args "--args=5,1,0"      regex "\\[0, 5, 5, 0\\]")
+  add_mli_test(name_base MEMREF_STORE_BAD_IDX          subdir store            mli_args "--args=5,3,0"   regex "Index 0 is out of bounds")
+  add_mli_test(name_base MEMREF_RESHAPE_VALID          subdir reshape            mli_args "--args=6,3"      regex "new dims: \\(6, 3\\)")
+  add_mli_test(name_base MEMREF_RESHAPE          subdir reshape            mli_args ""   function_name "realloc"   regex "new dims: \\(2, 3, 3\\)")
+  add_mli_test(name_base MEMREF_RESHAPE_INVALID          subdir reshape            mli_args "--args=5,3"   regex "New shape has different number of elements compared to old shape")
+
+endif()
